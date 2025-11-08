@@ -19,9 +19,10 @@ urlpatterns = [
     path('signup/', core_views.signup, name='signup'),
 
     # Rotas do app principal
-    path('', include('core.urls', namespace='core'))  
+    path('', include('core.urls', namespace='core')),
+
+    path("logout/", auth_views.LogoutView.as_view(next_page="core:home"), name="logout"),
 ]
 
-# Arquivos estáticos em modo DEBUG (útil durante o desenvolvimento)
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
