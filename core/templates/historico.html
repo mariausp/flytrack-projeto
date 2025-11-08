@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="pt-BR" data-page="historico">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Histórico de Viagens — Fly Track</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#edf6fb; --card:#fff; --ink:#0b1e45; --muted:#3a5674; --line:#e5eef6;
+      --cta:#ff5a00; --cta-ink:#fff; --accent:#2f80ed;
+      --ok:#1e9e56; --warn:#e58a00; --bad:#b00020; --chip:#eef6ff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+    .wrap{max-width:1260px;margin:28px auto;padding:0 18px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:28px;box-shadow:0 12px 30px rgba(13,35,60,.06);padding:22px}
+    .nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    .brand{font-weight:800;letter-spacing:.2px}
+    .nav ul{display:flex;gap:22px;list-style:none;margin:0;padding:0}
+    .nav a{text-decoration:none;color:var(--ink);font-weight:600}
+    .login{background:#ff8a50;color:#fff;font-weight:700;padding:10px 20px;border-radius:999px;text-decoration:none;border:2px solid #ffd8c3}
+    h1{margin:6px 0 12px;font-size:32px}
+    .muted{color:var(--muted)}
+
+    /* filtros */
+    .filters{display:grid;grid-template-columns:2fr 1.2fr 1.2fr 1.2fr .9fr;gap:12px;align-items:end;margin:12px 0 8px}
+    .field{display:flex;flex-direction:column;gap:6px}
+    .field label{font-size:12px;color:#0b3b74;font-weight:700}
+    .field input,.field select{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;color:var(--ink)}
+    .btn{background:var(--cta);color:var(--cta-ink);font-weight:800;border:0;border-radius:12px;padding:12px 16px;cursor:pointer}
+
+    .toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0 2px}
+    .toggle-view{display:flex;gap:8px}
+    .toggle-view button{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;font-weight:700;cursor:pointer;font-size:13px}
+    .toggle-view .is-active{outline:3px solid #cfe6fb}
+
+    /* === LISTAGEM (fonte menor + visual suave) === */
+    .table-wrap{max-height:65vh;overflow:auto;border:1px solid var(--line);border-radius:18px}
+    table.table{width:100%;border-collapse:separate;border-spacing:0}
+    .table th,.table td{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:14px}
+    .table th{position:sticky;top:0;background:#f7fbff;z-index:1;color:#0b3b74;font-weight:800;letter-spacing:.2px}
+    .table tbody tr{transition:background .18s ease}
+    .table tbody tr:hover{background:#f9fcff}
+    .table td .muted{font-size:12px}
+
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;
+      font-weight:800;line-height:1;border:1px solid var(--line);background:var(--chip);font-size:12px;
+      box-shadow:0 1px 0 rgba(0,0,0,.04) inset
+    }
+    .b-ok{background:#e9fbef;color:#0e7b3b;border-color:#bdeccf}
+    .b-warn{background:#fff6e6;color:#8a5600;border-color:#ffe0b3}
+    .b-bad{background:#ffe8ec;color:#7a0014;border-color:#ffc2ce}
+
+    .btn-ghost{background:#fff;border:1px solid var(--line);color:#183352;border-radius:999px;padding:9px 12px;font-weight:700;cursor:pointer;font-size:13px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .row-details{display:none}
+    .row.open + .row-details{display:table-row}
+    .link{color:var(--accent);text-decoration:none;font-weight:700}
+
+    /* cartões (também com fonte menor) */
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    @media (max-width:1100px){ .grid{grid-template-columns:repeat(2,1fr)} .filters{grid-template-columns:1fr 1fr 1fr 1fr .9fr} }
+    @media (max-width:760px){
+      .grid{grid-template-columns:1fr}
+      .filters{grid-template-columns:1fr 1fr;gap:10px}
+      .toolbar{flex-direction:column;align-items:stretch}
+    }
+    .trip-card{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff;display:grid;gap:8px;transition:transform .08s ease, box-shadow .18s ease}
+    .trip-card:hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(13,35,60,.07)}
+    .trip-head{display:flex;justify-content:space-between;align-items:center}
+    .trip-route{font-size:16px;font-weight:800}
+    .pill{background:#f1f6fb;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-weight:700;font-size:12px}
+    .empty{border:1px dashed var(--line);background:#f8fbff;border-radius:16px;padding:16px;text-align:center;color:#456}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <!-- NAV -->
+      <nav class="nav" aria-label="primária">
+        <div class="brand">Fly Track</div>
+        <ul>
+          <li><a href="{% url 'core:home' %}">Início</a></li>
+          <li><a href="{% url 'core:historico' %}">Histórico de Viagens</a></li>
+          <li><a href="{% url 'core:contato' %}">Contato</a></li>
+          <li><a class="login" href="{% url 'login' %}">Log in</a></li>
+        </ul>
+
+      </nav>
+
+      <header>
+        <h1>Histórico de Viagens</h1>
+        <p class="muted">Consulte passagens já compradas e pagamentos em processamento.</p>
+      </header>
+
+      <!-- FILTROS -->
+      <section class="filters" aria-label="Filtros de busca">
+        <div class="field">
+          <label for="q">Buscar</label>
+          <input id="q" placeholder="Ex.: Destino, origem ou localizador"/>
+        </div>
+        <div class="field">
+          <label for="from">Data de Ida</label>
+          <input id="from" type="date"/>
+        </div>
+        <div class="field">
+          <label for="to">Data de Volta</label>
+          <input id="to" type="date"/>
+        </div>
+        <div class="field">
+          <label for="status">Status</label>
+          <select id="status">
+            <option value="">Todos</option>
+            <option value="pago">Pago</option>
+            <option value="processando">Em processamento</option>
+            <option value="cancelado">Cancelado</option>
+          </select>
+        </div>
+        <div class="field">
+          <button id="apply" class="btn" type="button">Filtrar</button>
+        </div>
+      </section>
+
+      <div class="toolbar">
+        <div class="muted" id="countLabel">0 viagens encontradas</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <label class="sr-only" for="sort">Ordenar</label>
+          <select id="sort" aria-label="Ordenar">
+            <option value="data_desc">Mais recentes</option>
+            <option value="data_asc">Mais antigas</option>
+            <option value="valor_desc">Maior valor</option>
+            <option value="valor_asc">Menor valor</option>
+          </select>
+          <div class="toggle-view" role="tablist" aria-label="Modo de exibição">
+            <button id="btnTable" class="is-active" role="tab" aria-selected="true">Tabela</button>
+            <button id="btnCards" role="tab" aria-selected="false">Cartões</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABELA -->
+      <div id="modeTable" class="table-wrap">
+        <table class="table" aria-describedby="countLabel">
+          <thead>
+            <tr>
+              <th>Localizador</th>
+              <th>Rota</th>
+              <th>Datas</th>
+              <th>Passageiros</th>
+              <th>Valor</th>
+              <th>Status</th>
+              <th><span class="sr-only">Ações</span></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"><!-- via JS --></tbody>
+        </table>
+        <div id="emptyTable" class="empty" style="display:none">Nenhuma viagem encontrada com os filtros atuais.</div>
+      </div>
+
+      <!-- CARTÕES -->
+      <div id="modeCards" style="display:none">
+        <div id="cards" class="grid"><!-- via JS --></div>
+        <div id="emptyCards" class="empty" style="display:none">Nenhuma viagem encontrada com os filtros atuais.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Mock de dados =====
+    const viagens = [
+      { id:"FT-9341A", origem:{city:"São Paulo", code:"GRU"}, destino:{city:"Newark", code:"EWR"},
+        ida:"2025-09-18", volta:"2025-09-28", passageiros:["Maria E. S. Silva"], valor:5280.90,
+        status:"pago", metodo:"Cartão de crédito •••• 1234", emissao:"2025-07-01", cia:"United" },
+      { id:"FT-7730B", origem:{city:"Rio de Janeiro", code:"GIG"}, destino:{city:"São Paulo", code:"GRU"},
+        ida:"2025-11-20", volta:"", passageiros:["Maria E. S. Silva","Laura R."], valor:860.00,
+        status:"processando", metodo:"PIX (em análise)", emissao:"2025-11-05", cia:"GOL" },
+      { id:"FT-5522C", origem:{city:"Brasília", code:"BSB"}, destino:{city:"Recife", code:"REC"},
+        ida:"2024-12-17", volta:"2024-12-23", passageiros:["Maria E. S. Silva"], valor:1930.50,
+        status:"cancelado", metodo:"Cartão reembolsado", emissao:"2024-11-29", cia:"LATAM" },
+      { id:"FT-1186D", origem:{city:"São Paulo", code:"GRU"}, destino:{city:"Nova Iorque", code:"EWR"},
+        ida:"2026-01-10", volta:"2026-01-21", passageiros:["Maria E. S. Silva","Cristian M."], valor:6240.00,
+        status:"pago", metodo:"Cartão de crédito •••• 9988", emissao:"2025-10-02", cia:"United" },
+    ];
+
+    // ===== Utils =====
+    const fmtBRL = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    const fmtDate = iso => !iso ? "—" : new Date(iso+"T12:00:00")
+      .toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}).replace(/\.$/,'');
+    const within = (d, from, to) => !!d && (!from || d>=from) && (!to || d<=to);
+
+    // ===== Estado de UI =====
+    const els = {
+      q:document.getElementById('q'),
+      from:document.getElementById('from'),
+      to:document.getElementById('to'),
+      status:document.getElementById('status'),
+      apply:document.getElementById('apply'),
+      sort:document.getElementById('sort'),
+      countLabel:document.getElementById('countLabel'),
+      tbody:document.getElementById('tbody'),
+      emptyTable:document.getElementById('emptyTable'),
+      cards:document.getElementById('cards'),
+      emptyCards:document.getElementById('emptyCards'),
+      btnTable:document.getElementById('btnTable'),
+      btnCards:document.getElementById('btnCards'),
+      modeTable:document.getElementById('modeTable'),
+      modeCards:document.getElementById('modeCards'),
+    };
+
+    const badge = s => s==='pago'
+      ? '<span class="badge b-ok">Pago</span>'
+      : s==='processando'
+      ? '<span class="badge b-warn">Em processamento</span>'
+      : '<span class="badge b-bad">Cancelado</span>';
+
+    // ===== Filtro + Ordenação =====
+    function getFilters(){
+      return {
+        q:(els.q.value||'').trim().toLowerCase(),
+        from:els.from.value||'', to:els.to.value||'',
+        status:els.status.value||'', sort:els.sort.value
+      };
+    }
+
+    function applyFilters(){
+        const f = getFilters();
+        let arr = viagens.slice();
+
+        // Busca por texto (localizador, cia, origem/destino)
+        if (f.q){
+            arr = arr.filter(v=>{
+            const hay = [v.id, v.cia, v.origem.city, v.origem.code, v.destino.city, v.destino.code]
+                .join(' ').toLowerCase();
+            return hay.includes(f.q);
+            });
+        }
+
+        // >>> Filtro de datas por igualdade exata <<<
+        if (f.from){ // só mantém viagens cuja ida é exatamente a escolhida
+            arr = arr.filter(v => (v.ida || '') === f.from);
+        }
+        if (f.to){   // só mantém viagens cuja volta é exatamente a escolhida
+            arr = arr.filter(v => (v.volta || '') === f.to);
+        }
+
+        // Status
+        if (f.status){
+            arr = arr.filter(v => v.status === f.status);
+        }
+
+        // Ordenação
+        arr.sort((a,b)=>{
+            switch(f.sort){
+            case 'data_asc':   return a.ida.localeCompare(b.ida);
+            case 'data_desc':  return b.ida.localeCompare(a.ida);
+            case 'valor_asc':  return a.valor - b.valor;
+            case 'valor_desc': return b.valor - a.valor;
+            default: return 0;
+            }
+        });
+
+        renderTable(arr);
+        renderCards(arr);
+        els.countLabel.textContent = `${arr.length} viagem${arr.length===1?'':'s'} encontrada${arr.length===1?'':'s'}`;
+    }
+
+
+    // ===== Render Tabela =====
+    function renderTable(data){
+      els.tbody.innerHTML='';
+      if(data.length===0){ els.emptyTable.style.display='block'; return; }
+      els.emptyTable.style.display='none';
+
+      data.forEach(v=>{
+        const tr=document.createElement('tr'); tr.className='row';
+        tr.innerHTML=`
+          <td><strong>${v.id}</strong><div class="muted" style="font-size:12px">${v.cia}</div></td>
+          <td><div style="font-weight:800">${v.origem.code} → ${v.destino.code}</div><div class="muted">${v.origem.city} → ${v.destino.city}</div></td>
+          <td><div><b>Ida:</b> ${fmtDate(v.ida)}</div><div><b>Volta:</b> ${fmtDate(v.volta)}</div></td>
+          <td>${v.passageiros.join(', ')}</td>
+          <td>${fmtBRL(v.valor)}</td>
+          <td>${badge(v.status)}</td>
+          <td class="actions">
+            <button class="btn-ghost" data-action="detalhes" data-id="${v.id}">Detalhes</button>
+          </td>`;
+        els.tbody.appendChild(tr);
+
+        const det=document.createElement('tr'); det.className='row-details';
+        det.innerHTML=`
+          <td colspan="7" style="background:#f8fbff">
+            <div style="display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px">
+              <div><b>Método de pagamento:</b><br>${v.metodo}</div>
+              <div><b>Data de emissão:</b><br>${fmtDate(v.emissao)}</div>
+              <div><b>Companhia:</b><br>${v.cia}</div>
+            </div>
+          </td>`;
+        els.tbody.appendChild(det);
+      });
+
+      els.tbody.querySelectorAll('button[data-action="detalhes"]').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          const row=btn.closest('tr'); row.classList.toggle('open');
+        });
+      });
+    }
+
+    // ===== Render Cards =====
+    function renderCards(data){
+      els.cards.innerHTML='';
+      if(data.length===0){ els.emptyCards.style.display='block'; return; }
+      els.emptyCards.style.display='none';
+
+      data.forEach(v=>{
+        const c=document.createElement('article'); c.className='trip-card';
+        c.innerHTML=`
+          <div class="trip-head">
+            <div class="trip-route">${v.origem.code} → ${v.destino.code} <span class="muted" style="font-weight:600">(${v.origem.city} → ${v.destino.city})</span></div>
+            <div>${badge(v.status)}</div>
+          </div>
+          <div><span class="pill">${v.id}</span> · <span class="muted">${v.cia}</span></div>
+          <div><b>Ida:</b> ${fmtDate(v.ida)} · <b>Volta:</b> ${fmtDate(v.volta)}</div>
+          <div><b>Passageiros:</b> ${v.passageiros.join(', ')}</div>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn-ghost" data-action="detalhes" data-id="${v.id}">Detalhes</button>
+          </div>
+          <div class="details" style="display:none;border-top:1px solid var(--line);padding-top:8px">
+            <div><b>Método de pagamento:</b> ${v.metodo}</div>
+            <div><b>Emissão:</b> ${fmtDate(v.emissao)}</div>
+          </div>`;
+        els.cards.appendChild(c);
+
+        c.querySelector('[data-action="detalhes"]').addEventListener('click', ()=>{
+          const d=c.querySelector('.details');
+          d.style.display = d.style.display==='none' ? 'block' : 'none';
+        });
+      });
+    }
+
+    // ===== Modo de exibição =====
+    function setView(mode){
+      const isTable = (mode==='table');
+      els.btnTable.classList.toggle('is-active', isTable);
+      els.btnCards.classList.toggle('is-active', !isTable);
+      els.btnTable.setAttribute('aria-selected', String(isTable));
+      els.btnCards.setAttribute('aria-selected', String(!isTable));
+      els.modeTable.style.display = isTable ? '' : 'none';
+      els.modeCards.style.display = isTable ? 'none' : '';
+    }
+    els.btnTable.addEventListener('click', ()=> setView('table'));
+    els.btnCards.addEventListener('click', ()=> setView('cards'));
+
+    // ===== Inicialização =====
+    function update(){ applyFilters(); }
+    [els.q, els.from, els.to].forEach(el=> el.addEventListener('keydown', e=>{ if(e.key==='Enter') update(); }));
+    els.apply.addEventListener('click', update);
+    els.sort.addEventListener('change', update);
+    els.from.addEventListener('change', ()=>{ els.to.min = els.from.value || ''; });
+
+    setView('table'); update();
+  </script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Contato — Fly Track</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#edf6fb; --bg2:#cfe6fb; --card:#fff; --ink:#0b1e45; --muted:#3a5674;
+      --line:#e5eef6; --cta:#ff5a00; --cta-ink:#fff; --accent:#2f80ed; --chip:#f6fafc;
+      --ok:#1e9e56; --warn:#e58a00; --bad:#b00020; --radius:18px; --shadow:0 10px 30px rgba(17,38,71,.08);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%);
+      color:var(--ink);
+    }
+    a{color:var(--accent); text-decoration:none}
+    a:hover{text-decoration:underline}
+    .wrap{max-width:1152px; margin-inline:auto; padding:24px}
+
+    /* Nav */
+    .nav{
+      display:flex; align-items:center; justify-content:space-between;
+      background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+      padding:14px 18px; box-shadow:var(--shadow);
+    }
+    .brand{font-weight:800; letter-spacing:.2px}
+    .nav ul{display:flex; gap:14px; margin:0; padding:0; list-style:none}
+    .nav a{
+      display:inline-block; padding:8px 12px; border-radius:12px; color:var(--ink)
+    }
+    .nav a[aria-current="page"]{background:var(--chip); font-weight:600}
+
+    /* Grid */
+    .grid{display:grid; grid-template-columns: 1.1fr .9fr; gap:22px; margin-top:22px}
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr} }
+
+    .card{
+      background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+    .pad{padding:22px}
+    .title{margin:0 0 8px 0; font-size:28px; line-height:1.15}
+    .muted{color:var(--muted)}
+
+    /* Form */
+    form .row{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+    @media (max-width: 700px){ form .row{grid-template-columns:1fr} }
+    label{display:block; font-weight:600; margin-bottom:6px}
+    .field{display:flex; flex-direction:column; margin-bottom:14px}
+    input[type="text"], input[type="email"], textarea{
+      border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:15px;
+      outline:none; transition:border .15s, box-shadow .15s; background:#fff;
+    }
+    textarea{min-height:140px; resize:vertical}
+    input:focus, textarea:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(47,128,237,.15)}
+    .help{color:var(--muted); font-size:12px; margin-top:6px}
+    .actions{display:flex; gap:10px; align-items:center; justify-content:flex-end; margin-top:8px}
+    .btn{
+      border:0; border-radius:14px; padding:12px 16px; font-weight:700; cursor:pointer;
+    }
+    .btn-primary{background:var(--cta); color:var(--cta-ink)}
+    .btn-soft{background:var(--chip); color:var(--ink)}
+    .badge{
+      display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px;
+      border:1px solid var(--line); background:var(--chip); color:var(--muted); font-size:14px;
+    }
+
+    /* Aside */
+    .list{margin:0; padding:0; list-style:none; display:grid; gap:12px}
+    .item{
+      display:flex; gap:12px; padding:12px; border:1px solid var(--line);
+      border-radius:14px; background:#fff;
+    }
+    .item b{display:block}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .cta-card{
+      background:linear-gradient(135deg, rgba(47,128,237,.08), rgba(255,90,0,.08));
+      border:1px dashed var(--line);
+    }
+
+    /* Messages (Django messages framework) */
+    .messages{display:grid; gap:10px; margin-bottom:14px}
+    .msg{
+      padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:#fff;
+    }
+    .msg.ok{border-color:#cfe9da; background:#f4fbf6}
+    .msg.err{border-color:#f3d0d0; background:#fff5f5}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+
+    <!-- NAV -->
+    <nav class="nav" aria-label="primária">
+      <div class="brand">Fly Track</div>
+      <ul>
+        <li><a href="{% url 'core:home' %}">Início</a></li>
+        <li><a href="{% url 'core:historico' %}">Histórico de Viagens</a></li>
+        <li><a href="{% url 'core:contato' %}" aria-current="page">Contato</a></li>
+      </ul>
+    </nav>
+
+    <!-- Head -->
+    <div class="card pad" style="margin-top:18px">
+      <h1 class="title">Fale com a gente</h1>
+      <p class="muted">Dúvidas, sugestões ou algum problema com sua reserva? Envie uma mensagem — respondemos em até 1 dia útil.</p>
+    </div>
+
+    <div class="grid">
+      <!-- Formulário -->
+      <section class="card pad" aria-labelledby="contato-title">
+        {% if messages %}
+          <div class="messages" role="status" aria-live="polite">
+            {% for message in messages %}
+              <div class="msg {% if message.tags == 'success' %}ok{% elif 'error' in message.tags %}err{% endif %}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <h2 id="contato-title" class="visually-hidden" style="position:absolute;left:-9999px">Formulário de contato</h2>
+
+        <form method="post" action="{% url 'core:contato' %}" novalidate>
+          {% csrf_token %}
+
+          <div class="row">
+            <div class="field">
+              <label for="id_nome">Nome completo</label>
+              <input id="id_nome" name="nome" type="text" autocomplete="name" required placeholder="Ex.: Rafael Moreira Duarte">
+              <div class="help">Como você prefere ser chamada(o).</div>
+            </div>
+
+            <div class="field">
+              <label for="id_email">E-mail</label>
+              <input id="id_email" name="email" type="email" autocomplete="email" required placeholder="voce@exemplo.com">
+              <div class="help">Usaremos para responder sua mensagem.</div>
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="field">
+              <label for="id_assunto">Assunto</label>
+              <input id="id_assunto" name="assunto" type="text" maxlength="120" required placeholder="Ex.: Dúvida sobre reembolso">
+              <div class="help"><span id="assuntoCount">0</span>/120</div>
+            </div>
+
+            <div class="field">
+              <label for="id_pedido">Nº do pedido (opcional)</label>
+              <input id="id_pedido" name="pedido" type="text" inputmode="numeric" class="mono" placeholder="FT-2025-000123">
+              <div class="help">Se tiver um pedido, isso agiliza o atendimento.</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="id_msg">Mensagem</label>
+            <textarea id="id_msg" name="mensagem" required placeholder="Conte em detalhes como podemos ajudar."></textarea>
+            <div class="help">Dica: inclua datas, origem/destino e qualquer print relevante.</div>
+          </div>
+
+          <div class="actions">
+            <button type="reset" class="btn btn-soft">Limpar</button>
+            <button type="submit" class="btn btn-primary">Enviar mensagem</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Lateral: informações -->
+      <aside class="card pad">
+        <div class="badge" aria-live="polite">
+          <span>Tempo médio de resposta</span><b>até 1 dia útil</b>
+        </div>
+
+        <h3 style="margin:18px 0 8px">Canais oficiais</h3>
+        <ul class="list">
+          <li class="item">
+            <div>
+              <b>E-mail</b>
+              <div><a href="mailto:flytrackcontato@gmail.com">flytrackcontato@gmail.com</a></div>
+              <div class="help">Envie anexos, prints e comprovantes por aqui.</div>
+            </div>
+          </li>
+          <li class="item">
+            <div>
+              <b>Central de ajuda</b>
+              <div><a href="{% url 'core:historico' %}">Consultar histórico de viagens</a></div>
+              <div class="help">Veja status de reservas e pagamentos.</div>
+            </div>
+          </li>
+          <li class="item cta-card">
+            <div>
+              <b>Prioridade — voos nas próximas 24h</b>
+              <div>Escreva “<span class="mono">URGENTE</span>” no assunto.</div>
+              <div class="help">Atendimentos de emergência recebem prioridade.</div>
+            </div>
+          </li>
+        </ul>
+
+        <h3 style="margin:18px 0 8px">Privacidade</h3>
+        <p class="muted">Usamos seus dados apenas para atendimento. Ao enviar, você concorda com nossa política de privacidade.</p>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    // contador simples do assunto
+    const assunto = document.getElementById('id_assunto');
+    const assuntoCount = document.getElementById('assuntoCount');
+    if (assunto && assuntoCount){
+      const update = ()=> assuntoCount.textContent = assunto.value.length;
+      assunto.addEventListener('input', update); update();
+    }
+  </script>
+</body>
+</html>
