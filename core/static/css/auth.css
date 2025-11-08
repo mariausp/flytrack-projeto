@@ -1,0 +1,75 @@
+/* ====== Auth (login + signup) ====== */
+:root{
+  --bg:#e8f2fb; --bg2:#cfe6fb; --card:#fff; --ink:#0b1e45; --muted:#3a5674; --line:#e5eef6;
+  --cta:#ff5a00; --cta-ink:#fff; --accent:#2f80ed; --shadow:0 10px 30px rgba(17,38,71,.12);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink);
+  background:
+    radial-gradient(1200px 600px at 20% -10%, var(--bg2), transparent 60%),
+    radial-gradient(1200px 600px at 120% 120%, #dbefff, transparent 45%),
+    linear-gradient(180deg, var(--bg), #dfeefb);
+  display:grid;place-items:center;padding:24px;
+}
+.frame{
+  width:min(1100px,100%);background:var(--card);border-radius:28px;box-shadow:var(--shadow);overflow:hidden;
+  display:grid;grid-template-columns:1.1fr 1fr;
+}
+.left{position:relative;padding:28px 28px 0;background:linear-gradient(180deg,#f6fbff,#eef6ff 55%,#f8fbff);min-height:360px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px;letter-spacing:.2px;color:#0d2b66}
+.brand-icon{width:28px;height:28px;display:grid;place-items:center;border-radius:999px;background:#2f80ed;color:#fff;font-weight:900;font-size:14px}
+.art{position:absolute;inset:auto 0 0 0;height:64%;display:grid;place-items:center;pointer-events:none}
+.art img{width:92%;height:auto;filter:drop-shadow(0 10px 18px rgba(7,25,64,.10))}
+.footer-links{margin-top:18px;display:flex;gap:18px;color:#6c85a5;font-size:14px}
+.footer-links a{color:#6c85a5;text-decoration:none}
+.footer-links a:hover{text-decoration:underline}
+
+/* ===== Cartão da direita: mesmas dimensões p/ login & signup ===== */
+.right{display:grid;place-items:center;padding:28px}
+.card{
+  width:min(440px,100%);              /* <<< mantém a mesma largura nas duas páginas */
+  background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:28px
+}
+h1{margin:6px 0 4px;font-size:32px;line-height:1.1}
+.sub{color:var(--muted);margin:0 0 18px}
+
+/* ===== Campos idênticos ===== */
+label{display:block;font-weight:600;margin:14px 0 8px}
+.field{
+  display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;
+  padding:0 12px; height:48px;                 /* <<< MESMA ALTURA */
+}
+.field input, .field select{
+  border:0;outline:0;background:transparent;width:100%;font:inherit;color:var(--ink);height:100%;
+}
+.field input::placeholder{color:#8aa0b9}
+
+/* linhas auxiliares */
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:10px}
+.remember{display:flex;align-items:center;gap:10px;color:var(--muted);font-weight:500}
+.remember input{width:18px;height:18px;accent-color:#2f80ed}
+
+/* botões */
+.btn{display:inline-flex;align-items:center;justify-content:center;width:100%;padding:14px 16px;border-radius:12px;border:0;cursor:pointer;font-weight:700;letter-spacing:.2px}
+.btn-primary{background:var(--cta);color:var(--cta-ink)}
+.btn-primary:hover{filter:brightness(.95)}
+.divider{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;color:#7b90aa;margin:12px 0}
+.divider::before,.divider::after{content:"";height:1px;background:var(--line)}
+.btn-google{background:#f7f9fc;border:1px solid var(--line);color:#183352;gap:10px}
+.btn-google img{width:18px;height:18px}
+.signup{margin-top:14px;font-size:15px}
+.signup a{color:var(--accent);font-weight:700;text-decoration:none}
+.signup a:hover{text-decoration:underline}
+
+/* acessibilidade */
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* responsivo */
+@media (max-width:920px){
+  .frame{grid-template-columns:1fr}
+  .left{min-height:260px}
+  .card{box-shadow:none;padding:22px}
+  body{padding:16px}
+}

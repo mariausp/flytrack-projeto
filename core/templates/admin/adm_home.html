@@ -1,0 +1,187 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Painel do Administrador — Fly Track</title>
+
+  <!-- Fonte e estilo base -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --blue-dark: #0B1E45;
+      --blue-light: #f2f7fd;
+      --primary: #1e56a0;
+      --accent: #ff5a00;
+      --white: #fff;
+      --gray-line: #e5e9f2;
+      --gray-text: #3a5674;
+      --success: #16a34a;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,Segoe UI,Arial;}
+    body{display:flex;min-height:100vh;background:var(--blue-light);}
+    aside{
+      width:230px;
+      background:var(--blue-dark);
+      color:var(--white);
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      padding:24px 0;
+    }
+    aside h1{
+      text-align:center;
+      font-weight:700;
+      font-size:20px;
+      margin-bottom:32px;
+    }
+    nav a{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:#cdd8ef;
+      text-decoration:none;
+      padding:10px 24px;
+      border-left:4px solid transparent;
+      transition:0.2s;
+    }
+    nav a:hover, nav a.active{
+      background:rgba(255,255,255,0.08);
+      border-left-color:var(--accent);
+      color:#fff;
+    }
+    .logout{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 24px;
+      color:#cdd8ef;
+      text-decoration:none;
+    }
+    main{
+      flex:1;
+      padding:40px 60px;
+      background:var(--blue-light);
+      overflow-y:auto;
+    }
+    h2{
+      font-size:24px;
+      font-weight:700;
+      color:var(--blue-dark);
+      margin-bottom:24px;
+    }
+    form{
+      background:var(--white);
+      border-radius:20px;
+      padding:32px;
+      box-shadow:0 10px 25px rgba(0,0,0,0.05);
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+      gap:20px;
+      border:1px solid var(--gray-line);
+    }
+    label{display:block;font-weight:600;font-size:14px;color:var(--blue-dark);margin-bottom:6px;}
+    input,select{
+      width:100%;
+      padding:10px 12px;
+      border:1px solid var(--gray-line);
+      border-radius:8px;
+      font-size:14px;
+      outline:none;
+    }
+    input:focus,select:focus{border-color:var(--primary);}
+    .full-row{grid-column:1/-1;}
+    button{
+      background:var(--accent);
+      color:#fff;
+      border:none;
+      border-radius:10px;
+      padding:12px 20px;
+      font-size:16px;
+      cursor:pointer;
+      grid-column:1/-1;
+      justify-self:start;
+    }
+    .success{
+      grid-column:1/-1;
+      color:var(--success);
+      font-size:14px;
+      margin-top:8px;
+    }
+  </style>
+</head>
+
+<body>
+  <aside>
+    <div>
+      <h1>Fly Track</h1>
+      <nav>
+        <a href="#" class="active">👤 Dashboard</a>
+        <a href="#">🧍 Passageiros</a>
+        <a href="#">✈️ Voos</a>
+        <a href="#">🎟️ Passagens</a>
+        <a href="#">💳 Pagamentos</a>
+        <a href="#">🧾 Check-in</a>
+        <a href="#">🛍️ Produtos</a>
+        <a href="#">⚙️ Configurações</a>
+      </nav>
+    </div>
+    <a href="{% url 'logout' %}" class="logout">⏻ Sair</a>
+  </aside>
+
+  <main>
+    <h2>Cadastrar Voo</h2>
+    <form method="post" action="{% url 'core:voo_cadastrar' %}">
+      {% csrf_token %}
+      <div>
+        <label>Número do Voo</label>
+        <input type="text" name="numero_voo" placeholder="Ex: FT123">
+      </div>
+      <div>
+        <label>Origem</label>
+        <select name="origem">
+          <option value="">Selecione</option>
+          <option>GRU</option>
+          <option>CGH</option>
+          <option>BSB</option>
+          <option>REC</option>
+        </select>
+      </div>
+      <div>
+        <label>Destino</label>
+        <select name="destino">
+          <option value="">Selecione</option>
+          <option>GRU</option>
+          <option>CGH</option>
+          <option>BSB</option>
+          <option>REC</option>
+        </select>
+      </div>
+      <div>
+        <label>Data</label>
+        <input type="date" name="data">
+      </div>
+      <div>
+        <label>Horário de Partida</label>
+        <input type="time" name="horario">
+      </div>
+      <div>
+        <label>Capacidade de Assentos</label>
+        <input type="number" name="capacidade" placeholder="Ex: 180">
+      </div>
+      <div>
+        <label>Aeronave</label>
+        <input type="text" name="aeronave" placeholder="Ex: Airbus A320">
+      </div>
+      <button type="submit">Salvar</button>
+      {% if sucesso %}
+      <p class="success">✔ Voo cadastrado com sucesso</p>
+      {% endif %}
+    </form>
+  </main>
+</body>
+</html>
