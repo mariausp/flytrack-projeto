@@ -4,7 +4,6 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 
-
 class PortalMeta(models.Model):
     class Meta:
         managed = False
@@ -74,3 +73,34 @@ class PasswordResetToken(models.Model):
 
     def __str__(self):
         return f"PasswordResetToken(user={self.user_id}, used={bool(self.used_at)})"
+
+class Ticket(models.Model):
+    STATUS_CHOICES = [
+        ("PAGO", "Pago"),
+        ("CANCELADO", "Cancelado"),
+        ("PENDENTE", "Pendente"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="tickets",
+    )
+    codigo = models.CharField("Localizador", max_length=20)
+    origem = models.CharField(max_length=64)
+    destino = models.CharField(max_length=64)
+    partida = models.DateTimeField("Data/hora de partida")
+    chegada = models.DateTimeField("Data/hora de chegada", null=True, blank=True)
+    preco = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="PAGO")
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-partida", "-id"]
+        indexes = [
+            models.Index(fields=["user", "partida"]),
+            models.Index(fields=["codigo"]),
+        ]
+
+    def __str__(self):
+        return f"{self.codigo} — {self.origem}→{self.destino}"

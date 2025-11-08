@@ -13,16 +13,62 @@ from django.http import Http404
 from django.utils import timezone
 import hashlib, secrets, datetime, textwrap
 from base64 import urlsafe_b64encode, urlsafe_b64decode
-
+from django.core.paginator import Paginator
 from .forms import SignupForm, ForgotPasswordForm, ResetPasswordForm
 from .models import PasswordResetToken
+from .models import Ticket
+from django.db.models import Q
+from django.utils.dateparse import parse_date
 
 User = get_user_model()
+
+@login_required
+def historico(request):
+    qs = Ticket.objects.filter(user=request.user).order_by('-partida')
+
+    # --- parâmetros de filtro (GET) ---
+    q = (request.GET.get('q') or '').strip()
+    status = (request.GET.get('status') or '').strip().upper()
+    dfrom = request.GET.get('from') or ''   # data de ida (>=)
+    dto   = request.GET.get('to') or ''     # data de volta (<=) — aqui vamos usar como limite superior da PARTIDA
+
+    if q:
+        qs = qs.filter(
+            Q(codigo__icontains=q) |
+            Q(origem__icontains=q) |
+            Q(destino__icontains=q) |
+            Q(companhia__icontains=q)
+        )
+
+    if status:
+        qs = qs.filter(status=status)
+
+    if dfrom:
+        df = parse_date(dfrom)
+        if df:
+            qs = qs.filter(partida__date__gte=df)
+
+    if dto:
+        dt = parse_date(dto)
+        if dt:
+            qs = qs.filter(partida__date__lte=dt)
+
+    # (opcional) paginação
+    from django.core.paginator import Paginator
+    paginator = Paginator(qs, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
+    ctx = {
+        'tickets': page_obj.object_list,
+        'page_obj': page_obj,
+        'total': qs.count(),
+        'filters': {'q': q, 'from': dfrom, 'to': dto, 'status': status},
+    }
+    return render(request, "historico.html", ctx)
 
 # ---------------------- PÁGINAS PRINCIPAIS ----------------------
 def home(request): return render(request, "home.html")
 def resultados(request): return render(request, "resultados.html")
-def historico(request): return render(request, "historico.html")
 
 def contato(request):
     context = {"errors": {}, "data": {}}
@@ -93,30 +139,26 @@ def signup(request):
 
 def login_view(request):
     form = AuthenticationForm(request, data=request.POST or None)
-
-    if request.method == "POST" and form.is_valid():
-        user = form.get_user()
-        login(request, user)
-
-        # DEBUG no console do runserver
-        print(f"[LOGIN] user={user.username} staff={user.is_staff} super={user.is_superuser}")
-
-        nxt = request.GET.get("next")
-        if nxt:
-            print("[LOGIN] redirect -> next:", nxt)
-            return redirect(nxt)
-
-        if user.is_staff or user.is_superuser:
-            print("[LOGIN] redirect -> admin_home")
-            return redirect("core:admin_home")
-
-        print("[LOGIN] redirect -> home")
-        return redirect("core:home")
+    next_url = request.GET.get("next") or request.POST.get("next") or ""  # <<< garante string
 
     if request.method == "POST":
-        print("[LOGIN] form errors:", form.errors)
+        if form.is_valid():
+            user = form.get_user()
+            login(request, user)
 
-    return render(request, "login.html", {"form": form})
+            if not request.POST.get("remember_me"):
+                request.session.set_expiry(0)
+
+            if next_url:
+                return redirect(next_url)
+
+            if user.is_staff or user.is_superuser:
+                return redirect("core:admin_home")
+            return redirect("core:home")
+        else:
+            print("[LOGIN] form errors:", form.errors)
+
+    return render(request, "registration/login.html", {"form": form, "next": next_url})
 
 
 def logout_view(request):

@@ -1,9 +1,10 @@
 import os
 from pathlib import Path
+from django.urls import reverse_lazy
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -18,6 +19,10 @@ ALLOWED_HOSTS = []
 
 # usa o custom user que vamos criar
 AUTH_USER_MODEL = "core.User"
+
+LOGIN_URL = '/login/'             # a rota da sua página de login
+LOGIN_REDIRECT_URL = reverse_lazy('core:home')
+LOGOUT_REDIRECT_URL = reverse_lazy('core:home')
 
 
 # Application definition
@@ -51,7 +56,9 @@ ROOT_URLCONF = 'flytrack.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [ BASE_DIR / 'core' / 'templates' ],
+        'DIRS': [ 
+            BASE_DIR / 'templates',  
+            BASE_DIR / 'core' / 'templates' ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

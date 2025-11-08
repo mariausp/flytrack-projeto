@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from django.contrib.auth.views import LogoutView
 
 app_name = "core"
 
@@ -13,7 +14,7 @@ urlpatterns = [
     # Autenticação
     path("signup/", views.signup, name="signup"),
     path("login/", views.login_view, name="login"),
-    path("logout/", views.logout_view, name="logout"),  # (opcional, mas útil)
+    path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
 
     # Esqueci minha senha (custom)
     path("senha/esqueci/", views.forgot_password, name="password_reset"),
