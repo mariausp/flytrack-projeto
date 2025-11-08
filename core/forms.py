@@ -1,7 +1,7 @@
 # core/forms.py
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, password_validation
 from datetime import date
 import re
 
@@ -99,3 +99,32 @@ class SignupForm(UserCreationForm):
                 },
             )
         return user
+
+class ForgotPasswordForm(forms.Form):
+    email = forms.EmailField(label="E-mail", widget=forms.EmailInput(attrs={"autocomplete": "email"}))
+
+    def clean_email(self):
+        return self.cleaned_data["email"].strip().lower()  # normaliza
+
+class ResetPasswordForm(forms.Form):
+    new_password = forms.CharField(
+        label="Nova senha",
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+        strip=False,
+        help_text=password_validation.password_validators_help_text_html(),
+    )
+    new_password_confirm = forms.CharField(
+        label="Confirme a nova senha",
+        widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
+        strip=False,
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        p1 = cleaned.get("new_password")
+        p2 = cleaned.get("new_password_confirm")
+        if p1 and p2 and p1 != p2:
+            self.add_error("new_password_confirm", "As senhas não coincidem.")
+        if p1:
+            password_validation.validate_password(p1)
+        return cleaned

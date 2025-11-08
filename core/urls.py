@@ -10,4 +10,8 @@ urlpatterns = [
     path("resultados/", views.resultados, name="resultados"),
     path("historico/", views.historico, name="historico"),
     path("contato/", views.contato, name="contato"),
+    path("senha/esqueci/", views.forgot_password, name="password_reset"),
+    path("senha/enviado/", views.reset_password_done, name="password_reset_done"),
+    path("senha/redefinir/<uidb64>/<token>/", views.reset_password_confirm, name="password_reset_confirm"),
+    path("senha/concluida/", views.reset_password_complete, name="password_reset_complete"),
 ]

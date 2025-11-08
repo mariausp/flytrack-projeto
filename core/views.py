@@ -8,9 +8,17 @@ from django.core.mail import send_mail, EmailMessage, BadHeaderError
 from django.conf import settings
 from django.http import HttpResponse
 from .forms import SignupForm
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
+import hashlib, secrets, datetime
+from base64 import urlsafe_b64encode, urlsafe_b64decode
+from django.utils import timezone
+from django.shortcuts import render, redirect
+from django.urls import reverse
+from django.http import Http404
+from .forms import ForgotPasswordForm, ResetPasswordForm
+from .models import PasswordResetToken
 import textwrap
 
 def home(request):
@@ -124,3 +132,113 @@ def logout_view(request):
     logout(request)
     messages.info(request, "Você saiu da conta.")
     return redirect("core:home")
+
+def _hash_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+def forgot_password(request):
+    """
+    GET: mostra formulário de e-mail.
+    POST: (sempre) mostra página de 'enviado', independentemente de o e-mail existir (anti-enumeração).
+    """
+    if request.method == "POST":
+        form = ForgotPasswordForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data["email"]
+            try:
+                user = User.objects.get(email__iexact=email)
+            except User.DoesNotExist:
+                # Não revela existência
+                return redirect("core:password_reset_done")
+
+            # Apaga tokens antigos expirados (higiene)
+            PasswordResetToken.objects.filter(user=user, used_at__isnull=True, expires_at__lt=timezone.now()).delete()
+
+            # Gera token aleatório + salva hash
+            raw_token = secrets.token_urlsafe(32)
+            token_hash = _hash_token(raw_token)
+            expires = timezone.now() + datetime.timedelta(hours=2)  # expira em 2h (ajuste se quiser)
+
+            PasswordResetToken.objects.create(
+                user=user,
+                token_hash=token_hash,
+                expires_at=expires,
+                request_ip=(request.META.get("REMOTE_ADDR") or None),
+                user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
+            )
+
+            # monta link: uid + token
+            uidb64 = urlsafe_b64encode(str(user.pk).encode()).decode()
+            reset_url = request.build_absolute_uri(
+                reverse("core:password_reset_confirm", args=[uidb64, raw_token])
+            )
+
+            # envia e-mail (simples)
+            subject = "Redefinição de senha — Fly Track"
+            body = (
+                "Olá,\n\n"
+                "Recebemos uma solicitação para redefinir a sua senha no Fly Track.\n"
+                f"Use o link abaixo (válido por 2 horas):\n\n{reset_url}\n\n"
+                "Se você não solicitou, ignore este e-mail.\n\n"
+                "— Equipe Fly Track"
+            )
+            try:
+                send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=True)
+            except BadHeaderError:
+                pass  # não expõe erro aqui
+
+            return redirect("core:password_reset_done")
+    else:
+        form = ForgotPasswordForm()
+
+    return render(request, "password_reset.html", {"form": form})
+
+def reset_password_confirm(request, uidb64: str, token: str):
+    """
+    Valida token (hash + expiração + não usado) e permite setar nova senha.
+    Token é uso único: ao salvar, marca como usado e invalida os demais tokens ativos do usuário.
+    """
+    # decodifica uid
+    try:
+        uid = int(urlsafe_b64decode(uidb64.encode()).decode())
+    except Exception:
+        raise Http404("Link inválido")
+
+    try:
+        user = User.objects.get(pk=uid)
+    except User.DoesNotExist:
+        raise Http404("Usuário não encontrado")
+
+    token_hash = _hash_token(token)
+    try:
+        prt = PasswordResetToken.objects.get(user=user, token_hash=token_hash, used_at__isnull=True)
+    except PasswordResetToken.DoesNotExist:
+        raise Http404("Link inválido ou já utilizado")
+
+    if timezone.now() > prt.expires_at:
+        messages.error(request, "Este link expirou. Solicite uma nova redefinição.")
+        return redirect("core:password_reset")
+
+    if request.method == "POST":
+        form = ResetPasswordForm(request.POST)
+        if form.is_valid():
+            new_password = form.cleaned_data["new_password"]
+            user.set_password(new_password)
+            user.save()
+
+            # marca usado e invalida outros tokens do usuário
+            prt.used_at = timezone.now()
+            prt.save(update_fields=["used_at"])
+            PasswordResetToken.objects.filter(user=user, used_at__isnull=True).update(used_at=timezone.now())
+
+            return redirect("core:password_reset_complete")
+    else:
+        form = ResetPasswordForm()
+
+    return render(request, "password_reset_confirm.html", {"form": form, "user": user})
+
+def reset_password_done(request):
+    return render(request, "password_reset_done.html")
+
+def reset_password_complete(request):
+    return render(request, "password_reset_complete.html")
