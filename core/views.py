@@ -1,5 +1,6 @@
 # core/views.py
-from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect, render
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 from django.core.validators import validate_email
@@ -8,6 +9,7 @@ from django.core.mail import send_mail, EmailMessage, BadHeaderError
 from django.conf import settings
 from django.http import HttpResponse
 from .forms import SignupForm
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib import messages
 from django.contrib.auth.forms import AuthenticationForm
@@ -20,6 +22,8 @@ from django.http import Http404
 from .forms import ForgotPasswordForm, ResetPasswordForm
 from .models import PasswordResetToken
 import textwrap
+
+User = get_user_model()
 
 def home(request):
     return render(request, 'home.html')
@@ -119,7 +123,7 @@ def login_view(request):
             if user is not None:
                 login(request, user)
                 messages.success(request, f"Olá {user.get_full_name() or user.username} — você entrou.")
-                return redirect("core:home")
+                return redirect("core:post_login")
             else:
                 messages.error(request, "Usuário ou senha inválidos.")
         else:
@@ -132,6 +136,23 @@ def logout_view(request):
     logout(request)
     messages.info(request, "Você saiu da conta.")
     return redirect("core:home")
+
+@login_required
+def post_login(request):
+    """
+    Decide pra onde mandar após login:
+    - Se for staff (admin), vai para o painel
+    - Caso contrário, vai para a home normal
+    """
+    if request.user.is_staff:
+        return redirect("core:admin_home")
+    return redirect("core:home")
+
+@staff_member_required
+def admin_home(request):
+    # Renderize um template específico do painel (crie core/templates/admin_home.html)
+    return render(request, "admin_home.html")
+
 
 def _hash_token(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
