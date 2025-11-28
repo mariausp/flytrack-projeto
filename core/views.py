@@ -399,10 +399,15 @@ def confirmacao(request):
         messages.info(request, "Inicie uma nova compra para acessar esta página.")
         return redirect("core:home")
 
+    if request.user.is_authenticated:
+        fallback_passageiro = request.user.get_full_name() or request.user.get_username()
+    else:
+        fallback_passageiro = "Cliente Fly Track"
+
     context = {
         "localizador": checkout_result["localizador"],
         "summary": summary,
-        "passageiro": checkout_result.get("nome") or request.user.get_full_name() or request.user.username,
+        "passageiro": checkout_result.get("nome") or fallback_passageiro,
     }
     request.session.pop("checkout_result", None)
     return render(request, "confirmacao.html", context)
