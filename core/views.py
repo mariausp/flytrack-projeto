@@ -68,7 +68,15 @@ def historico(request):
 
 # ---------------------- PÁGINAS PRINCIPAIS ----------------------
 def home(request): return render(request, "home.html")
-def resultados(request): return render(request, "resultados.html")
+def resultados(request):
+    ctx = {
+        "default_origem": request.GET.get("origem", ""),
+        "default_destino": request.GET.get("destino", ""),
+        "default_data": request.GET.get("data", ""),
+        "default_volta": request.GET.get("volta", ""),
+        "default_pax": request.GET.get("pax", ""),
+    }
+    return render(request, "resultados.html", ctx)
 
 def contato(request):
     context = {"errors": {}, "data": {}}
@@ -224,6 +232,49 @@ def admin_produtos(request):
 @user_passes_test(_staff_access, login_url="core:home")
 def admin_configuracoes(request):
     return render(request, "admin/configuracoes.html", {"active_nav": "configuracoes"})
+
+
+@login_required
+def selecionar_assento(request):
+    origem = request.GET.get("origem", "Origem")
+    destino = request.GET.get("destino", "Destino")
+    data_viagem = request.GET.get("data", "")
+    tarifa = request.GET.get("tarifa", "")
+    codigo = request.GET.get("codigo", "FT000")
+    segmento = request.GET.get("segmento", "ida")
+    try:
+        pax_total = int(request.GET.get("pax", "1"))
+    except (TypeError, ValueError):
+        pax_total = 1
+    pax_total = max(1, min(pax_total, 9))
+
+    seat_rows = []
+    blocked = {"2B", "3C", "4D", "5E", "6A"}
+    preferred = {"1A", "1B", "1C", "7A", "7F"}
+    for row in range(1, 11):
+        seats = []
+        for letter in "ABCDEF":
+            label = f"{row}{letter}"
+            if label in blocked:
+                status = "ocupado"
+            elif label in preferred:
+                status = "premium"
+            else:
+                status = "livre"
+            seats.append({"label": label, "status": status})
+        seat_rows.append({"row": row, "seats": seats})
+
+    ctx = {
+        "origem": origem,
+        "destino": destino,
+        "data_viagem": data_viagem,
+        "tarifa": tarifa,
+        "codigo": codigo,
+        "segmento": segmento,
+        "seat_rows": seat_rows,
+        "pax_total": pax_total,
+    }
+    return render(request, "selecionar_assento.html", ctx)
 
 # ---------------------- ESQUECI MINHA SENHA ----------------------
 def _hash_token(token: str) -> str:

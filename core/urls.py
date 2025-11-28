@@ -39,6 +39,9 @@ urlpatterns = [
     # Rotas do painel (ajuste quando tiver views específicas)
     path("painel/voo/cadastrar/", views.admin_home, name="voo_cadastrar"),  # provisório
 
+    # Seleção de assentos (pós-resultados)
+    path("resultados/assentos/", views.selecionar_assento, name="selecionar_assento"),
+
     # API pública autenticada (consumida via JavaScript)
     path("api/voos/", api.busca_voos, name="api_busca_voos"),
 ]

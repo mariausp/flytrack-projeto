@@ -18,6 +18,56 @@
     --chip:#eef6ff; --ok:#2ecc71;
   }
   *{box-sizing:border-box}
+  async function consultarTarifas(){
+    if (!apiStatusEl) return;
+    apiStatusEl.textContent = 'Consultando tarifas em tempo real…';
+    apiStatusEl.classList.remove('is-error','is-ok');
+    const params = new URLSearchParams({
+      origem,
+      destino,
+      pax: String(getTotalPax()),
+    });
+    if (idaISO) params.set('data', idaISO);
+
+    try {
+      const response = await fetch(`/api/voos/?${params.toString()}`, {
+        headers: { 'Accept': 'application/json' },
+        credentials: 'same-origin',
+      });
+
+      if (response.status === 403) {
+        throw new Error('Faça login para consultar tarifas personalizadas.');
+      }
+      if (!response.ok) {
+        throw new Error(`Erro ao consultar a API (HTTP ${response.status}).`);
+      }
+
+      const payload = await response.json();
+      const recomendado = payload.recomendado || {};
+      const barato = payload.mais_barato || {};
+
+      if (precoRecomendadoEl) precoRecomendadoEl.textContent = recomendado.preco_fmt || 'R$ -';
+      if (precoMaisBaratoEl) precoMaisBaratoEl.textContent = barato.preco_fmt || 'R$ -';
+      if (precoMaisBaratoResumoEl) {
+        const descricao = barato.descricao ? ` · ${barato.descricao}` : '';
+        precoMaisBaratoResumoEl.textContent = (barato.preco_fmt || 'R$ -') + descricao;
+      }
+
+      const origemDesc = payload.parametros?.origem || origem || 'origem';
+      const destinoDesc = payload.parametros?.destino || destino || 'destino';
+      apiStatusEl.textContent = `Tarifas calculadas para ${origemDesc} → ${destinoDesc}.`;
+      apiStatusEl.classList.add('is-ok');
+    } catch (err) {
+      if (precoRecomendadoEl) precoRecomendadoEl.textContent = 'R$ -';
+      if (precoMaisBaratoEl) precoMaisBaratoEl.textContent = 'R$ -';
+      if (precoMaisBaratoResumoEl) precoMaisBaratoResumoEl.textContent = 'R$ -';
+      apiStatusEl.textContent = err.message || 'Não foi possível consultar a API.';
+      apiStatusEl.classList.add('is-error');
+    }
+  }
+
+  scheduleAPIUpdate();
+
   body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
   .wrap{max-width:1260px;margin:28px auto;padding:0 18px}
 
@@ -93,19 +143,6 @@
   .top{
     background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px;
   }
-  .tabs{display:flex; gap:14px; margin-top:14px}
-  .tab{
-    flex:1; background:var(--card); border:2px solid #cfe0ef; border-radius:14px; padding:14px;
-    text-align:center; font-weight:800; color:#0b3b74; box-shadow:0 8px 16px rgba(10,35,60,.06);
-  }
-  .tab.is-active{outline:3px solid #bee2ff}
-
-  .compare{
-    background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px; margin-top:14px;
-  }
-  .compare .row{display:grid; grid-template-columns:100px repeat(5,1fr); gap:10px; align-items:center; padding:6px 0}
-  .badge{display:inline-flex; gap:6px; align-items:center; background:var(--chip); border:1px solid #cfe0ef; border-radius:999px; padding:4px 10px; font-weight:700}
-  .score{background:#e9fbef; color:#0e7b3b; padding:2px 6px; border-radius:6px; font-weight:800}
 
   /* cards de voos */
   .card{
@@ -162,10 +199,48 @@
   #paxField{ cursor:pointer; user-select:none; }
   #paxField:focus-visible{ outline:3px solid #bfe0ff; outline-offset:2px; }
 
+  .api-status{
+    margin:16px 0;
+    padding:14px 18px;
+    border-radius:14px;
+    border:1px solid #cfe0ef;
+    background:#eef6ff;
+    color:#0a2d4e;
+    font-weight:600;
+  }
+  .api-status.is-error{background:#ffecec;border-color:#ffb3b3;color:#b02727;}
+  .api-status.is-ok{background:#e9fbef;border-color:#aeefc4;color:#0e7b3b;}
+
+  .results-grid{
+    margin-top:26px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+    gap:18px;
+  }
+  .result-card{
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:18px;
+    background:var(--card);
+    box-shadow:0 12px 24px rgba(11,30,69,.08);
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .result-card header{display:flex;justify-content:space-between;align-items:center;font-weight:700;}
+  .result-card .airline{color:var(--muted); font-weight:600;}
+  .result-card .schedule{font-size:18px;font-weight:800;}
+  .result-card .supplement{color:var(--muted);font-size:14px;}
+  .result-card .price{font-size:28px;font-weight:900;}
+  .result-card footer{display:flex;justify-content:space-between;align-items:center;}
+  .btn-select{
+    border:0; border-radius:12px; background:var(--primary); color:#fff;
+    padding:10px 16px; font-weight:700; cursor:pointer;
+  }
+
 
 </style>
 </head>
 <body>
+{% url 'core:selecionar_assento' as selecionar_assento_url %}
 <div class="wrap grid">
 
   <!-- LATERAL -->
@@ -264,40 +339,9 @@
   <main>
     <div class="top">
       <div class="muted" id="titulos">Voos ida e volta</div>
-
-      <div class="compare">
-        <div class="row">
-          <div></div>
-          <div class="badge"><img alt="" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><circle cx='8' cy='8' r='8' fill='%23d00'/></svg>">Avianca</div>
-        <div class="badge"><img alt="" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16'><rect width='16' height='16' fill='%23006'/></svg>">Delta</div>
-          <div class="badge">GOL</div>
-          <div class="badge">LATAM</div>
-          <div class="badge">United</div>
-        </div>
-        <div class="row">
-          <div class="muted">Direto</div>
-          <div><span class="score">6,5</span> Bom · R$ 5.490</div>
-          <div><span class="score">7,9</span> Muito Bom · R$ 6.223</div>
-          <div><span class="score">7,7</span> Muito Bom · R$ 6.223</div>
-          <div><span class="score">7,8</span> Muito Bom · R$ 6.980</div>
-          <div><span class="score">7,5</span> Muito Bom · R$ 5.350</div>
-        </div>
-        <div class="row">
-          <div class="muted">Com paradas</div>
-          <div><b style="color:#0a8f3e">R$ 4.970</b></div>
-          <div>R$ 5.130</div>
-          <div>R$ 6.150</div>
-          <div>R$ 6.100</div>
-          <div>R$ 5.450</div>
-        </div>
-      </div>
-
-      <div class="tabs">
-        <div class="tab is-active">Recomendados<br><span class="muted">R$ 5.807</span></div>
-        <div class="tab">Mais Baratos<br><span class="muted">R$ 4.970</span></div>
-        <div class="tab">Mais Rápidos<br><span class="muted">R$ 6.230</span></div>
-      </div>
     </div>
+
+    <div id="apiStatus" class="api-status" role="status">Carregando tarifas em tempo real…</div>
 
     <!-- CARD 1 - IDA -->
     <article class="card">
@@ -315,8 +359,8 @@
         <div class="sub" id="destinoCity">New York</div>
       </div>
       <div class="price-col">
-        <div class="price">R$ -</div>
-        <button class="btn-seat">Assento</button>
+        <div class="price" id="precoRecomendado">R$ -</div>
+        <a class="btn-seat" href="{{ selecionar_assento_url }}?segmento=ida{% if default_origem %}&origem={{ default_origem|urlencode }}{% endif %}{% if default_destino %}&destino={{ default_destino|urlencode }}{% endif %}{% if default_data %}&data={{ default_data|urlencode }}{% endif %}{% if default_pax %}&pax={{ default_pax|urlencode }}{% endif %}" data-segment="ida" data-codigo="FT230">Assento</a>
       </div>
       <div class="bar" style="grid-column:1/-1"></div>
       <div class="muted" style="grid-column:1/-1">1 Adulto · Impostos, taxas e encargos</div>
@@ -338,14 +382,16 @@
         <div class="sub" id="destinoCity2">New York</div>
       </div>
       <div class="price-col">
-        <div class="muted">R$ -</div>
-        <button class="btn-seat">Assento</button>
+        <div class="muted" id="precoMaisBarato">R$ -</div>
+        <a class="btn-seat" href="{{ selecionar_assento_url }}?segmento=volta{% if default_destino %}&origem={{ default_destino|urlencode }}{% endif %}{% if default_origem %}&destino={{ default_origem|urlencode }}{% endif %}{% if default_volta %}&data={{ default_volta|urlencode }}{% endif %}{% if default_pax %}&pax={{ default_pax|urlencode }}{% endif %}" data-segment="volta" data-codigo="FT231">Assento</a>
       </div>
       <div style="grid-column:1/-1; display:flex; justify-content:flex-end; gap:16px; align-items:center; margin-top:4px">
-        <div class="muted">R$ -</div>
-        <button class="buy">Comprar</button>
+        <div class="muted" id="precoMaisBaratoResumo">R$ -</div>
+        <a class="buy" href="{{ selecionar_assento_url }}?segmento=volta{% if default_destino %}&origem={{ default_destino|urlencode }}{% endif %}{% if default_origem %}&destino={{ default_origem|urlencode }}{% endif %}{% if default_volta %}&data={{ default_volta|urlencode }}{% endif %}{% if default_pax %}&pax={{ default_pax|urlencode }}{% endif %}" data-segment="volta" data-codigo="FT231">Comprar</a>
       </div>
     </article>
+
+      <section id="dynamicResults" class="results-grid" aria-live="polite"></section>
 
   </main>
 </div>
@@ -396,6 +442,11 @@
   const cardVolta = document.getElementById("cardVolta");
   const btnRT     = document.getElementById("btnRT");
   const btnOW     = document.getElementById("btnOW");
+  const apiStatusEl = document.getElementById("apiStatus");
+  const precoRecomendadoEl = document.getElementById("precoRecomendado");
+  const precoMaisBaratoEl = document.getElementById("precoMaisBarato");
+  const precoMaisBaratoResumoEl = document.getElementById("precoMaisBaratoResumo");
+  const dynamicResultsEl = document.getElementById("dynamicResults");
 
   // ---------- preenche painel ----------
   origemTxt.textContent  = origem;
@@ -448,7 +499,147 @@
     p.set("modo",   modo);
     idaISO   ? p.set("data",  idaISO)   : p.delete("data");
     (voltaISO && modo==='rt') ? p.set("volta", voltaISO) : p.delete("volta");
+    const totalPax = getTotalPax();
+    totalPax > 1 ? p.set("pax", totalPax) : p.delete("pax");
     history.replaceState(null, "", location.pathname + "?" + p.toString());
+  }
+
+  let apiFetchTimer;
+  function scheduleAPIUpdate(){
+    clearTimeout(apiFetchTimer);
+    apiFetchTimer = setTimeout(consultarTarifas, 250);
+  }
+
+  function handleStateChange(){
+    atualizaCards();
+    syncQS();
+    scheduleAPIUpdate();
+  }
+
+  function openSeatSelection(opts={}){
+    const segmento = opts.segmento || 'ida';
+    const params = new URLSearchParams({
+      segmento,
+      codigo: opts.codigo || (segmento === 'ida' ? 'FT230' : 'FT231'),
+      origem: opts.origem || origem,
+      destino: opts.destino || destino,
+    });
+    const dataSegment = opts.data || (segmento === 'volta' ? (voltaISO || idaISO || '') : (idaISO || ''));
+    if (dataSegment) params.set('data', dataSegment);
+    if (opts.tarifa) params.set('tarifa', opts.tarifa);
+    params.set('pax', String(getTotalPax()));
+    window.location.href = `/resultados/assentos/?${params.toString()}`;
+  }
+
+  function renderFlightOptions(payload){
+    if (!dynamicResultsEl || !payload) {
+      if (dynamicResultsEl) dynamicResultsEl.innerHTML = '';
+      return;
+    }
+    const origemDesc = cidadeSemPais(payload.parametros?.origem || origem).split(',')[0] || 'Origem';
+    const destinoDesc = cidadeSemPais(payload.parametros?.destino || destino).split(',')[0] || 'Destino';
+    const rec = payload.recomendado || {};
+    const barato = payload.mais_barato || {};
+    const premiumPrice = rec.preco ? `R$ ${(rec.preco * 1.18).toFixed(0)}` : 'R$ -';
+    const swiftPrice = rec.preco ? `R$ ${(rec.preco * 1.08).toFixed(0)}` : 'R$ -';
+
+    const options = [
+      {
+        label: 'Tarifa Recomendada', airline: 'LATAM', code: 'FT230', segmento: 'ida',
+        horario: '22h15 → 07h20', detalhe: `${origemDesc} → ${destinoDesc} · Direto`,
+        price: rec.preco_fmt || 'R$ -', badge: rec.descricao || 'Inclui 1 mala despachada', data: idaISO,
+        origem: origemDesc, destino: destinoDesc,
+      },
+      {
+        label: 'Mais Barata', airline: 'GOL', code: 'FT450', segmento: 'ida',
+        horario: '06h40 → 12h55', detalhe: '1 parada · Assento econômico',
+        price: barato.preco_fmt || 'R$ -', badge: barato.descricao || 'Tarifa Light', data: idaISO,
+        origem: origemDesc, destino: destinoDesc,
+      },
+      {
+        label: 'Executiva Flex', airline: 'Delta', code: 'DT980', segmento: 'ida',
+        horario: '20h05 → 05h10', detalhe: 'Direto · Lounge & refeição',
+        price: premiumPrice, badge: 'Upgrade automático de assento', data: idaISO,
+        origem: origemDesc, destino: destinoDesc,
+      },
+      {
+        label: 'Mais Rápida', airline: 'United', code: 'UA522', segmento: 'ida',
+        horario: '09h30 → 15h20', detalhe: 'Direto · Prioridade de embarque',
+        price: swiftPrice, badge: 'Seleção grátis de assentos', data: idaISO,
+        origem: origemDesc, destino: destinoDesc,
+      },
+    ];
+
+    dynamicResultsEl.innerHTML = options.map(opt => `
+      <article class="result-card">
+        <header>
+          <div>${opt.label}</div>
+          <div class="airline">${opt.airline} • ${opt.code}</div>
+        </header>
+        <div class="schedule">${opt.horario}</div>
+        <div class="supplement">${opt.detalhe}</div>
+        <div class="supplement">${opt.badge}</div>
+        <footer>
+          <div class="price">${opt.price}</div>
+          <button type="button" class="btn-select" data-option="${opt.label}" data-segment="${opt.segmento}" data-tarifa="${opt.price}" data-codigo="${opt.code}" data-origem="${opt.origem}" data-destino="${opt.destino}" data-data="${opt.data || ''}">Selecionar</button>
+        </footer>
+      </article>
+    `).join('');
+  }
+
+  async function consultarTarifas(){
+    if (!apiStatusEl) return;
+    apiStatusEl.textContent = 'Consultando tarifas em tempo real…';
+    apiStatusEl.classList.remove('is-error','is-ok');
+    const params = new URLSearchParams({
+      origem,
+      destino,
+      pax: String(getTotalPax()),
+    });
+    if (idaISO) params.set('data', idaISO);
+
+    try {
+      const response = await fetch(`/api/voos/?${params.toString()}`, {
+        headers: { 'Accept': 'application/json' },
+        credentials: 'same-origin',
+      });
+
+      if (response.status === 403) {
+        throw new Error('Faça login para consultar tarifas personalizadas.');
+      }
+      if (!response.ok) {
+        throw new Error(`Erro ao consultar a API (HTTP ${response.status}).`);
+      }
+
+      const payload = await response.json();
+      const recomendado = payload.recomendado || {};
+      const barato = payload.mais_barato || {};
+
+      if (precoRecomendadoEl) precoRecomendadoEl.textContent = recomendado.preco_fmt || 'R$ -';
+      if (precoMaisBaratoEl) precoMaisBaratoEl.textContent = barato.preco_fmt || 'R$ -';
+      if (precoMaisBaratoResumoEl) {
+        const descricao = barato.descricao ? ` · ${barato.descricao}` : '';
+        precoMaisBaratoResumoEl.textContent = (barato.preco_fmt || 'R$ -') + descricao;
+      }
+
+      const origemDesc = payload.parametros?.origem || origem || 'origem';
+      const destinoDesc = payload.parametros?.destino || destino || 'destino';
+      apiStatusEl.textContent = `Tarifas calculadas para ${origemDesc} → ${destinoDesc}.`;
+      apiStatusEl.classList.add('is-ok');
+      renderFlightOptions(payload);
+    } catch (err) {
+      if (precoRecomendadoEl) precoRecomendadoEl.textContent = 'R$ -';
+      if (precoMaisBaratoEl) precoMaisBaratoEl.textContent = 'R$ -';
+      if (precoMaisBaratoResumoEl) precoMaisBaratoResumoEl.textContent = 'R$ -';
+      const msg = err.message || 'Não foi possível consultar a API.';
+      if (err.message && err.message.includes('Faça login')){
+        apiStatusEl.innerHTML = `${msg} <a href="/login/" style="color:#0a58ca">Entrar</a>`;
+      } else {
+        apiStatusEl.textContent = msg;
+      }
+      apiStatusEl.classList.add('is-error');
+      renderFlightOptions(null);
+    }
   }
 
   // ---------- interações ----------
@@ -467,12 +658,12 @@
     if (voltaISO && voltaISO < idaISO){
       voltaISO = ""; inpVolta.value = ""; voltaTxt.textContent = "—";
     }
-    atualizaCards(); syncQS();
+    handleStateChange();
   });
   inpVolta.addEventListener("change", ()=>{
     voltaISO = inpVolta.value || "";
     voltaTxt.textContent = fmtDataISO(voltaISO);
-    atualizaCards(); syncQS();
+    handleStateChange();
   });
 
   // inverter origem/destino
@@ -480,7 +671,7 @@
     [origem, destino] = [destino, origem];
     origemTxt.textContent = origem;
     destinoTxt.textContent = destino;
-    atualizaCards(); syncQS();
+    handleStateChange();
   });
 
   // botão "Buscar" — volta para a página anterior levando o estado
@@ -488,7 +679,10 @@
     const params = new URLSearchParams({
       origem, destino, data: idaISO || "", volta: (modo==='rt' ? (voltaISO||"") : "")
     }).toString();
-    window.location.href = "index.html?" + params;
+    const paxParam = getTotalPax();
+    const finalParams = new URLSearchParams(params);
+    if (paxParam > 1) finalParams.set('pax', paxParam);
+    window.location.href = "/?" + finalParams.toString();
   });
 
   // ---------- MODO: Só ida / Ida e Volta ----------
@@ -514,15 +708,12 @@
       inpVolta.disabled = false;
       titulos.textContent = 'Voos ida e volta';
     }
-    atualizaCards(); syncQS();
+    handleStateChange();
   }
 
   // cliques dos botões
   btnOW.addEventListener('click', ()=> setTripMode('ow'));
   btnRT.addEventListener('click', ()=> setTripMode('rt'));
-
-  // aplica modo vindo da URL ao carregar
-  setTripMode(modo === 'ow' ? 'ow' : 'rt');
 
   // --------- Passageiros & Classe ----------
   const paxField   = document.getElementById('paxField');
@@ -532,6 +723,17 @@
   // estado
   const pax = { adultos: 1, idosos: 0, criancas: 0 };
   let cabin = 'Econômica';
+
+  const qsPaxTotal = parseInt(getQS('pax', '1'), 10);
+  if (Number.isFinite(qsPaxTotal) && qsPaxTotal > 1){
+    pax.adultos = Math.min(qsPaxTotal, 9);
+    const adNumEl = document.getElementById('adNum');
+    if (adNumEl) adNumEl.textContent = pax.adultos;
+  }
+
+  function getTotalPax(){
+    return Math.max(pax.adultos + pax.idosos + pax.criancas, 1);
+  }
 
   function plural(n, s, p){ return n===1 ? s : p; }
   function renderSummary(){
@@ -593,6 +795,7 @@
     renderSummary();
     paxPop.classList.remove('is-open');
     paxField.setAttribute('aria-expanded','false');
+    handleStateChange();
 
     // (opcional) salvar na URL junto com o resto do estado:
     // if (typeof history !== 'undefined') {
@@ -605,6 +808,47 @@
     paxPop.classList.remove('is-open');
     paxField.setAttribute('aria-expanded','false');
   });
+
+  // aplica modo vindo da URL ao carregar (após inicializar pax)
+  setTripMode(modo === 'ow' ? 'ow' : 'rt');
+
+  document.querySelectorAll('.btn-seat').forEach(btn=>{
+    btn.addEventListener('click', (event)=>{
+      event.preventDefault();
+      const segmento = btn.dataset.segment || 'ida';
+      const tarifa = segmento === 'ida'
+        ? (precoRecomendadoEl?.textContent || '')
+        : (precoMaisBaratoEl?.textContent || '');
+      openSeatSelection({ segmento, tarifa, codigo: btn.dataset.codigo });
+    });
+  });
+
+  const buyBtn = document.querySelector('.buy');
+  buyBtn?.addEventListener('click', (event)=>{
+    event.preventDefault();
+    openSeatSelection({
+      segmento: buyBtn.dataset.segment || 'volta',
+      tarifa: precoMaisBaratoEl?.textContent || '',
+      codigo: buyBtn.dataset.codigo,
+    });
+  });
+
+  consultarTarifas();
+
+  if (dynamicResultsEl){
+    dynamicResultsEl.addEventListener('click', (event)=>{
+      const btn = event.target.closest('.btn-select');
+      if (!btn) return;
+      openSeatSelection({
+        segmento: btn.dataset.segment || 'ida',
+        tarifa: btn.dataset.tarifa,
+        codigo: btn.dataset.codigo,
+        origem: btn.dataset.origem,
+        destino: btn.dataset.destino,
+        data: btn.dataset.data,
+      });
+    });
+  }
 
 
 
