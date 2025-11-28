@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}
+
+{% block main_content %}
+  <h2>Passageiros</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>E-mail</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Maria Andrade</td>
+          <td>maria.andrade@example.com</td>
+          <td><span class="badge green">Ativa</span></td>
+        </tr>
+        <tr>
+          <td>João Lisboa</td>
+          <td>joao.lisboa@example.com</td>
+          <td><span class="badge blue">Verificação</span></td>
+        </tr>
+        <tr>
+          <td>Carla Menezes</td>
+          <td>carla.menezes@example.com</td>
+          <td><span class="badge orange">Pendente</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

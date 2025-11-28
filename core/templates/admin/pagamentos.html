@@ -1,0 +1,41 @@
+{% extends "admin/base.html" %}
+
+{% block main_content %}
+  <h2>Pagamentos</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Pedido</th>
+          <th>Passageiro</th>
+          <th>Valor</th>
+          <th>Forma</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>#9821</td>
+          <td>Marina Souza</td>
+          <td>R$ 5.540,00</td>
+          <td>Cartão • 4x</td>
+          <td><span class="badge green">Liquidado</span></td>
+        </tr>
+        <tr>
+          <td>#9822</td>
+          <td>Ricardo Moreira</td>
+          <td>R$ 1.280,00</td>
+          <td>PIX</td>
+          <td><span class="badge orange">Pendente</span></td>
+        </tr>
+        <tr>
+          <td>#9823</td>
+          <td>Silvia Castro</td>
+          <td>R$ 3.870,00</td>
+          <td>Boleto</td>
+          <td><span class="badge blue">Em análise</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

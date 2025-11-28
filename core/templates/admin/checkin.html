@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+
+{% block main_content %}
+  <h2>Check-in</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Passageiro</th>
+          <th>Voo</th>
+          <th>Assento</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Felipe Araújo</td>
+          <td>FT230</td>
+          <td>12A</td>
+          <td><span class="badge green">Confirmado</span></td>
+        </tr>
+        <tr>
+          <td>Lorena Prado</td>
+          <td>FT098</td>
+          <td>07C</td>
+          <td><span class="badge blue">Aguardando</span></td>
+        </tr>
+        <tr>
+          <td>Thiago Lopes</td>
+          <td>FT777</td>
+          <td>-</td>
+          <td><span class="badge orange">Não iniciado</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

@@ -90,13 +90,10 @@ class SignupForm(UserCreationForm):
 
         if commit:
             user.save()
-            # cria/atualiza o Profile, se existir
+            # mantém Profile em sincronia sem campos inexistentes
             Profile.objects.update_or_create(
                 user=user,
-                defaults={
-                    "cpf": self.cleaned_data["cpf"],
-                    "birth_date": self.cleaned_data["birth_date"],
-                },
+                defaults={},
             )
         return user
 

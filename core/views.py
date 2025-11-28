@@ -173,10 +173,57 @@ def post_login(request):
     return redirect("core:home")
 
 # ---------------------- ADMIN (somente staff/superuser) ----------------------
+def _staff_access(user):
+    return user.is_staff or user.is_superuser
+
+
 @login_required
-@user_passes_test(lambda u: u.is_staff or u.is_superuser, login_url="core:home")
+@user_passes_test(_staff_access, login_url="core:home")
 def admin_home(request):
-    return render(request, "admin/adm_home.html", {"sucesso": request.method == "POST"})
+    ctx = {"sucesso": request.method == "POST", "active_nav": "dashboard"}
+    return render(request, "admin/adm_home.html", ctx)
+
+
+@login_required
+@user_passes_test(_staff_access, login_url="core:home")
+def admin_passageiros(request):
+    return render(request, "admin/passageiros.html", {"active_nav": "passageiros"})
+
+
+@login_required
+@user_passes_test(_staff_access, login_url="core:home")
+def admin_voos(request):
+    return render(request, "admin/voos.html", {"active_nav": "voos"})
+
+
+@login_required
+@user_passes_test(_staff_access, login_url="core:home")
+def admin_passagens(request):
+    return render(request, "admin/passagens.html", {"active_nav": "passagens"})
+
+
+@login_required
+@user_passes_test(_staff_access, login_url="core:home")
+def admin_pagamentos(request):
+    return render(request, "admin/pagamentos.html", {"active_nav": "pagamentos"})
+
+
+@login_required
+@user_passes_test(_staff_access, login_url="core:home")
+def admin_checkin(request):
+    return render(request, "admin/checkin.html", {"active_nav": "checkin"})
+
+
+@login_required
+@user_passes_test(_staff_access, login_url="core:home")
+def admin_produtos(request):
+    return render(request, "admin/produtos.html", {"active_nav": "produtos"})
+
+
+@login_required
+@user_passes_test(_staff_access, login_url="core:home")
+def admin_configuracoes(request):
+    return render(request, "admin/configuracoes.html", {"active_nav": "configuracoes"})
 
 # ---------------------- ESQUECI MINHA SENHA ----------------------
 def _hash_token(token: str) -> str:
