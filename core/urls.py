@@ -50,4 +50,9 @@ urlpatterns = [
 
     # API pública autenticada (consumida via JavaScript)
     path("api/voos/", api.busca_voos, name="api_busca_voos"),
-]
+
+
+    path("painel/passagem/nova/", views.adicionar_passagem, name="adicionar_passagem"),
+
+    # Rotas antigas ou provisórias
+    path("painel/voo/cadastrar/", views.admin_home, name="voo_cadastrar"),]
