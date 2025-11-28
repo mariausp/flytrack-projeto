@@ -9,6 +9,7 @@ urlpatterns = [
     # Páginas públicas
     path("", views.home, name="home"),
     path("resultados/", views.resultados, name="resultados"),
+    path("resultados/resumo/", views.resumo_compra, name="resumo_compra"),
     path("historico/", views.historico, name="historico"),
     path("contato/", views.contato, name="contato"),
 
@@ -41,6 +42,8 @@ urlpatterns = [
 
     # Seleção de assentos (pós-resultados)
     path("resultados/assentos/", views.selecionar_assento, name="selecionar_assento"),
+    path("checkout/pagamento/", views.pagamento, name="pagamento"),
+    path("checkout/confirmacao/", views.confirmacao, name="confirmacao"),
 
     # API pública autenticada (consumida via JavaScript)
     path("api/voos/", api.busca_voos, name="api_busca_voos"),

@@ -11,7 +11,7 @@ from django.core.mail import send_mail, EmailMessage, BadHeaderError
 from django.conf import settings
 from django.http import Http404
 from django.utils import timezone
-import hashlib, secrets, datetime, textwrap
+import hashlib, secrets, datetime, textwrap, random, re
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 from django.core.paginator import Paginator
 from .forms import SignupForm, ForgotPasswordForm, ResetPasswordForm
@@ -19,6 +19,7 @@ from .models import PasswordResetToken
 from .models import Ticket
 from django.db.models import Q
 from django.utils.dateparse import parse_date
+from decimal import Decimal
 
 User = get_user_model()
 
@@ -275,6 +276,136 @@ def selecionar_assento(request):
         "pax_total": pax_total,
     }
     return render(request, "selecionar_assento.html", ctx)
+
+
+CURRENCY_CLEAN_RE = re.compile(r"[^0-9,.-]")
+
+
+def _parse_currency(value: str) -> Decimal:
+    if not value:
+        return Decimal("0")
+    cleaned = CURRENCY_CLEAN_RE.sub("", value)
+    cleaned = cleaned.replace(".", "").replace(",", ".")
+    try:
+        return Decimal(cleaned)
+    except Exception:
+        return Decimal("0")
+
+
+def _format_brl(amount: Decimal) -> str:
+    if amount <= 0:
+        return "R$ 0,00"
+    return f"R$ {amount:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def _extract_summary_data(source):
+    origem = source.get("origem", "Origem")
+    destino = source.get("destino", "Destino")
+    data_viagem = source.get("data", "")
+    codigo = source.get("codigo", "FT000")
+    segmento = source.get("segmento", "ida").lower()
+    pax = source.get("pax")
+    try:
+        pax_total = max(1, min(int(pax), 9)) if pax is not None else 1
+    except (TypeError, ValueError):
+        pax_total = 1
+    tarifa_raw = source.get("tarifa", "")
+    tarifa_decimal = _parse_currency(tarifa_raw)
+    assentos_raw = source.get("assentos", "")
+    assentos = [s.strip() for s in assentos_raw.split(",") if s.strip()]
+    return {
+        "origem": origem,
+        "destino": destino,
+        "data_viagem": data_viagem,
+        "codigo": codigo,
+        "segmento": segmento,
+        "pax_total": pax_total,
+        "tarifa_fmt": tarifa_raw or _format_brl(tarifa_decimal),
+        "tarifa_valor": tarifa_decimal,
+        "assentos": assentos,
+    }
+
+
+def _summary_for_session(summary: dict) -> dict:
+    safe_summary = summary.copy()
+    valor = safe_summary.get("tarifa_valor")
+    if isinstance(valor, Decimal):
+        safe_summary["tarifa_valor"] = str(valor)
+    return safe_summary
+
+
+def resumo_compra(request):
+    if request.method == "POST":
+        summary = _extract_summary_data(request.POST)
+        request.session["checkout_summary"] = _summary_for_session(summary)
+        return redirect("core:pagamento")
+
+    summary = _extract_summary_data(request.GET)
+    if not summary["assentos"]:
+        messages.warning(request, "Selecione ao menos um assento antes de continuar.")
+        return redirect("core:resultados")
+
+    total_estimado = summary["tarifa_valor"]
+    ctx = {
+        "summary": summary,
+        "total_estimado": _format_brl(total_estimado) if total_estimado > 0 else summary["tarifa_fmt"],
+        "back_url": request.META.get("HTTP_REFERER") or reverse("core:selecionar_assento"),
+    }
+    return render(request, "resumo_compra.html", ctx)
+
+
+def pagamento(request):
+    summary = request.session.get("checkout_summary")
+    if not summary:
+        messages.info(request, "Inicie uma nova busca para finalizar sua compra.")
+        return redirect("core:home")
+
+    errors = {}
+    data = {"nome": "", "cpf": "", "cartao": "", "validade": "", "cvv": ""}
+
+    if request.method == "POST":
+        for field in data.keys():
+            data[field] = request.POST.get(field, "").strip()
+
+        if not data["nome"]:
+            errors["nome"] = "Informe o titular do cartão."
+        if not data["cpf"] or len(re.sub(r"\D", "", data["cpf"])) != 11:
+            errors["cpf"] = "CPF inválido."
+        if not data["cartao"] or len(re.sub(r"\D", "", data["cartao"])) < 13:
+            errors["cartao"] = "Número do cartão inválido."
+        if not data["validade"]:
+            errors["validade"] = "Informe a validade."
+        if not data["cvv"] or len(data["cvv"]) not in (3, 4):
+            errors["cvv"] = "CVV inválido."
+
+        if not errors:
+            localizador = f"FT{random.randint(100000, 999999)}"
+            checkout_result = {
+                "localizador": localizador,
+                "nome": data["nome"],
+                "summary": summary,
+            }
+            request.session["checkout_result"] = checkout_result
+            messages.success(request, "Pagamento aprovado!")
+            return redirect("core:confirmacao")
+
+    return render(request, "pagamento.html", {"summary": summary, "errors": errors, "form": data})
+
+
+def confirmacao(request):
+    checkout_result = request.session.get("checkout_result")
+    summary = (checkout_result or {}).get("summary")
+    if not checkout_result or not summary:
+        messages.info(request, "Inicie uma nova compra para acessar esta página.")
+        return redirect("core:home")
+
+    context = {
+        "localizador": checkout_result["localizador"],
+        "summary": summary,
+        "passageiro": checkout_result.get("nome") or request.user.get_full_name() or request.user.username,
+    }
+    request.session.pop("checkout_result", None)
+    return render(request, "confirmacao.html", context)
 
 # ---------------------- ESQUECI MINHA SENHA ----------------------
 def _hash_token(token: str) -> str:

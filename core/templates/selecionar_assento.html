@@ -109,7 +109,14 @@
         </div>
       {% endwith %}
       <p class="muted">Assentos premium adicionam R$ 90,00 à tarifa selecionada.</p>
-      <button class="cta" id="confirmSeat" disabled>Confirmar Assento</button>
+      <button class="cta" id="confirmSeat" disabled
+        data-origem="{{ origem }}"
+        data-destino="{{ destino }}"
+        data-data="{{ data_viagem }}"
+        data-tarifa="{{ tarifa }}"
+        data-codigo="{{ codigo }}"
+        data-segmento="{{ segmento }}"
+      >Confirmar Assento</button>
     </aside>
   </main>
 
@@ -200,8 +207,18 @@
 
     confirmSeat?.addEventListener('click', ()=>{
       if (!selectedSeats.size) return;
-      const seats = Array.from(selectedSeats.keys()).join(', ');
-      alert(`Assentos ${seats} reservados! Em breve o fluxo de emissão será finalizado.`);
+      const seats = Array.from(selectedSeats.keys());
+      const params = new URLSearchParams({
+        origem: confirmSeat.dataset.origem || '',
+        destino: confirmSeat.dataset.destino || '',
+        data: confirmSeat.dataset.data || '',
+        tarifa: confirmSeat.dataset.tarifa || '',
+        codigo: confirmSeat.dataset.codigo || '',
+        segmento: confirmSeat.dataset.segmento || 'ida',
+        pax: String(paxLimit),
+        assentos: seats.join(','),
+      });
+      window.location.href = `/resultados/resumo/?${params.toString()}`;
     });
 
     updateSeatSummary();
