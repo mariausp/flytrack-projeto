@@ -29,3 +29,11 @@ class TicketAdmin(admin.ModelAdmin):
     list_display = ("codigo","user","origem","destino","partida","status","preco")
     search_fields = ("codigo","origem","destino","user__username","user__email")
     list_filter = ("status",)
+
+@admin.register(Voo)
+class VooAdmin(admin.ModelAdmin):
+
+    list_display = ("codigo", "origem", "destino", "partida", "preco", "criado_em")
+    search_fields = ("codigo", "origem", "destino")
+    list_filter = ("origem", "destino", "partida")
+    ordering = ("-criado_em",)
