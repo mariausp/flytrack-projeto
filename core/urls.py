@@ -28,6 +28,8 @@ urlpatterns = [
     # Painel administrativo interno (não é o /admin/ do Django)
     path("painel/", views.admin_home, name="admin_home"),
 
-    # Rotas do painel (ajuste quando tiver views específicas)
-    path("painel/voo/cadastrar/", views.admin_home, name="voo_cadastrar"),  # provisório
-]
+
+    path("painel/passagem/nova/", views.adicionar_passagem, name="adicionar_passagem"),
+
+    # Rotas antigas ou provisórias
+    path("painel/voo/cadastrar/", views.admin_home, name="voo_cadastrar"),]
