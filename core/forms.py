@@ -128,3 +128,16 @@ class ResetPasswordForm(forms.Form):
         if p1:
             password_validation.validate_password(p1)
         return cleaned
+class VooAdminForm(forms.ModelForm):
+    class Meta:
+        model = Voo  
+        fields = ['codigo', 'origem', 'destino', 'partida', 'chegada', 'preco']
+        
+        widgets = {
+            'origem': forms.Select(choices=CIDADES, attrs={'class': 'form-select'}),
+            'destino': forms.Select(choices=CIDADES, attrs={'class': 'form-select'}),
+            'partida': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'chegada': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'codigo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: GOL-1234'}),
+            'preco': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        }
