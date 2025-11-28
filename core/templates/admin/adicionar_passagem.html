@@ -1,0 +1,222 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fly Track — Gestão de Voos</title>
+  
+  <link rel="icon" type="image/png" href="{% static 'core/img/favicon.png' %}">
+  <link rel="shortcut icon" href="{% static 'core/img/favicon.png' %}">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    /* === ESTILOS GLOBAIS (Mesma estética da Home) === */
+    :root{
+      --bg:#edf6fb; --card:#ffffff; --ink:#0b1e45; --muted:#3a5674;
+      --line:#e5eef6; --cta:#ff5a00; --cta-ink:#ffffff; --pill:#f6fafc; --accent:#2f80ed;
+    }
+    *{box-sizing:border-box}
+    body{ margin:0; font-family: Inter, system-ui, sans-serif; color:var(--ink); background:var(--bg); }
+    
+    .wrap{max-width:1200px;margin:32px auto;padding:0 20px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:28px;padding:28px;box-shadow:0 12px 30px rgba(13,35,60,.06); margin-bottom: 24px;}
+    
+    /* Navbar */
+    .nav{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:0;}
+    .brand{font-weight:800;font-size: 25px;}
+    .nav ul{display:flex;gap:28px;list-style:none;margin:0;padding:0;align-items:center}
+    .nav a{color:var(--ink);text-decoration:none;font-weight:600}
+    .user-chip{background:var(--pill);border:1px solid var(--line);padding:8px 12px;border-radius:999px;font-weight:700}
+    .logout-btn{background:#fff;border:1.5px solid var(--line);padding:8px 14px;border-radius:10px;text-decoration:none;color:var(--muted);font-weight:700; cursor: pointer;}
+    .logout-btn:hover{border-color:var(--accent);color:var(--accent);background:#f7fbff}
+
+    /* Títulos */
+    .form-title { font-size: 26px; font-weight: 700; text-align: center; margin-bottom: 24px; }
+    .table-title { font-size: 20px; font-weight: 700; margin: 0 0 16px 0; display: flex; align-items: center; gap: 10px; }
+    .badge-count { background: var(--pill); border: 1px solid var(--line); padding: 4px 10px; border-radius: 99px; font-size: 14px; color: var(--muted); }
+
+    /* Formulário */
+    .form-container { max-width: 650px; margin: 0 auto; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--muted); font-size: 14px; }
+    .form-control, .form-select {
+        width: 100%; padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px;
+        font-size: 15px; color: var(--ink); background: var(--bg);
+        transition: border-color 0.2s ease;
+    }
+    .form-control:focus, .form-select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(47,128,237,0.1); }
+    
+    /* Date Field */
+    .datetime-container { position: relative; display: flex; align-items: center; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding-right: 40px; }
+    .datetime-container input { border: none; background: transparent; padding: 12px 16px; width: 100%; outline: none; }
+    .icon-calendar { position: absolute; right: 12px; pointer-events: none; color: var(--accent); }
+    
+    /* Botões */
+    .form-actions { display: flex; gap: 12px; margin-top: 24px; }
+    .btn-cancel { background: transparent; color: var(--muted); border: 1px solid var(--line); font-weight: 600; border-radius: 18px; padding: 14px 20px; cursor: pointer; flex: 1; text-align: center; text-decoration: none; transition: all 0.2s; }
+    .btn-cancel:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-submit { background: var(--cta); color: var(--cta-ink); font-weight: 700; border: 0; border-radius: 18px; padding: 14px 20px; cursor: pointer; box-shadow: 0 6px 14px rgba(255,90,0,.25); flex: 1; transition: all 0.2s; }
+    .btn-submit:hover { background: #e64e00; transform: translateY(-1px); }
+
+    /* === TABELA DE VOOS === */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 500px; }
+    th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 600; padding: 12px 16px; border-bottom: 2px solid var(--line); background: var(--pill); }
+    th:first-child { border-top-left-radius: 12px; }
+    th:last-child { border-top-right-radius: 12px; }
+    
+    td { padding: 14px 16px; border-bottom: 1px solid var(--line); font-size: 14px; color: var(--ink); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background-color: #fcfdfe; }
+    
+    .route { font-weight: 600; display: flex; align-items: center; gap: 8px; }
+    .route-arrow { color: var(--accent); font-size: 16px; }
+    .price { color: var(--cta); font-weight: 700; background: #fff5eb; padding: 4px 10px; border-radius: 6px; font-size: 13px; }
+    .date-info { color: var(--muted); font-size: 13px; }
+    
+    .empty-state { text-align: center; padding: 40px; color: var(--muted); font-style: italic; background: var(--pill); border-radius: 12px; border: 1px dashed var(--line); }
+    
+    .text-danger { color: #e53935; font-size: 12px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    
+    <div class="card" style="padding: 16px 28px;">
+        <nav class="nav">
+            <div class="brand">Fly Track</div>
+            <ul>
+                <li><a href="{% url 'core:home' %}">Início</a></li>
+                {% if user.is_authenticated %}
+                    <li class="user-menu">
+                        <span class="user-chip">Admin: {{ user.username }}</span>
+                        <form action="{% url 'core:logout' %}" method="post" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="logout-btn">Sair</button>
+                        </form>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+
+    <div class="form-container">
+        
+        <div class="card">
+            <h1 class="form-title">Cadastrar Novo Voo</h1>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert" style="background: #e6fffa; color: #007f5f; padding: 12px; border-radius: 12px; text-align: center; margin-bottom: 20px; border: 1px solid #b7eb8f;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label>Código / Localizador</label>
+                    {{ form.codigo }}
+                    {% if form.codigo.errors %}<div class="text-danger">{{ form.codigo.errors.0 }}</div>{% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label>Origem</label>
+                    {{ form.origem }}
+                </div>
+                
+                <div class="form-group">
+                    <label>Destino</label>
+                    {{ form.destino }}
+                </div>
+
+                <div class="row" style="display:flex; gap:16px;">
+                    <div style="flex:1">
+                        <div class="form-group">
+                            <label>Partida</label>
+                            <div class="datetime-container">
+                                {{ form.partida }}
+                                <span class="icon-calendar">📅</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="flex:1">
+                        <div class="form-group">
+                            <label>Chegada</label>
+                            <div class="datetime-container">
+                                {{ form.chegada }}
+                                <span class="icon-calendar">📅</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Preço (R$)</label>
+                    {{ form.preco }}
+                </div>
+
+                <div class="form-actions">
+                    <a href="{% url 'core:home' %}" class="btn-cancel">Cancelar</a>
+                    <button type="submit" class="btn-submit">Salvar Voo</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2 class="table-title">
+                Voos no Catálogo
+                <span class="badge-count">{{ voos.count }}</span>
+            </h2>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Rota</th>
+                            <th>Partida</th>
+                            <th>Preço</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in voos %}
+                        <tr>
+                            <td style="font-weight: 700;">{{ v.codigo }}</td>
+                            <td>
+                                <div class="route">
+                                    {{ v.origem }} 
+                                    <span class="route-arrow">➝</span> 
+                                    {{ v.destino }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="date-info">{{ v.partida|date:"d/m/Y" }}</div>
+                                <div style="font-size: 12px; color: #888;">{{ v.partida|date:"H:i" }}</div>
+                            </td>
+                            <td><span class="price">R$ {{ v.preco }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4">
+                                <div class="empty-state">
+                                    Nenhum voo cadastrado para venda ainda.
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+  </div>
+</body>
+</html>
