@@ -176,6 +176,10 @@
                   <td><strong>{{ t.codigo }}</strong></td>
                   <td><div style="font-weight:800">{{ t.origem }} → {{ t.destino }}</div></td>
                   <td>
+                    <div style="font-weight:800">{{ t.origem }} → {{ t.destino }}</div>
+                    {% if t.assentos %}<div class="muted">Assentos: {{ t.assentos }}</div>{% endif %}
+                  </td>
+                  <td>
                     <div><b>Partida:</b> {{ t.partida|date:"d/m/Y H:i" }}</div>
                     {% if t.chegada %}<div><b>Chegada:</b> {{ t.chegada|date:"d/m/Y H:i" }}</div>{% endif %}
                   </td>
@@ -223,6 +227,7 @@
                   </div>
                 </div>
                 <div><span class="pill">{{ t.codigo }}</span></div>
+                {% if t.assentos %}<div class="muted">Assentos: {{ t.assentos }}</div>{% endif %}
                 <div><b>Partida:</b> {{ t.partida|date:"d/m/Y H:i" }}{% if t.chegada %} · <b>Chegada:</b> {{ t.chegada|date:"d/m/Y H:i" }}{% endif %}</div>
                 <div><b>Preço:</b> R$ {{ t.preco }}</div>
               </article>

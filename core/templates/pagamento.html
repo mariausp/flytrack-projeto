@@ -68,8 +68,12 @@
         <div class="row"><span>Segmento</span><span>{{ summary.segmento|title }}</span></div>
         <div class="row"><span>Data</span><span>{{ summary.data_viagem|default:"Data a confirmar" }}</span></div>
         <div class="row"><span>Passageiros</span><span>{{ summary.pax_total }}</span></div>
-        <div class="row"><span>Assentos</span><span>{{ summary.assentos|join:", " }}</span></div>
-        <div class="row" style="margin-top:12px;font-size:20px;"><span>Total</span><span>{{ summary.tarifa_fmt }}</span></div>
+        <div class="row"><span>Assentos</span><span>{{ summary.assentos|join:", "|default:"—" }}</span></div>
+        <div class="row" style="margin-top:16px;font-weight:600;"><span>Tarifa base</span><span>{{ summary.tarifa_fmt }}</span></div>
+        {% if summary.has_premium %}
+          <div class="row" style="font-weight:600;"><span>Premium ({{ summary.premium_count }})</span><span>{{ summary.premium_total_fmt }}</span></div>
+        {% endif %}
+        <div class="row" style="margin-top:12px;font-size:20px;"><span>Total</span><span>{{ summary.total_fmt }}</span></div>
         <span class="badge">Voo {{ summary.codigo }}</span>
       </aside>
     </div>

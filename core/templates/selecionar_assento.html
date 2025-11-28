@@ -129,9 +129,42 @@
     const paxMinus = document.getElementById('paxMinus');
     const paxPlus = document.getElementById('paxPlus');
     const paxCountEl = document.getElementById('paxCount');
+    const baseFareEl = document.getElementById('precoTarifa');
     let paxLimit = Math.max(1, Number('{{ pax_total }}') || 1);
     const selectedSeats = new Map();
     const MAX_PAX = 9;
+    const PREMIUM_SURCHARGE = 90;
+
+    // Normalizes fares regardless of thousand/decimal separators (pt-BR vs en-US).
+    function sanitizeCurrency(text){
+      if (!text) return 0;
+      const cleaned = text.replace(/[^0-9,.-]/g, '');
+      if (!cleaned) return 0;
+      const usesComma = cleaned.includes(',');
+      const usesDot = cleaned.includes('.');
+
+      if (usesComma){
+        const collapsed = cleaned.replace(/\./g, '');
+        const normalized = collapsed.replace(/,(\d{2})$/, '.$1');
+        const num = Number(normalized);
+        return Number.isFinite(num) ? num : 0;
+      }
+
+      if (usesDot && /\.\d{2}$/.test(cleaned)){
+        const num = Number(cleaned);
+        return Number.isFinite(num) ? num : 0;
+      }
+
+      const num = Number(cleaned.replace(/\./g, ''));
+      return Number.isFinite(num) ? num : 0;
+    }
+
+    function formatBRL(value){
+      if (!Number.isFinite(value) || value <= 0) return 'R$ -';
+      return value.toLocaleString('pt-BR', { style:'currency', currency:'BRL', minimumFractionDigits:2 });
+    }
+
+    const baseFareValue = sanitizeCurrency(baseFareEl?.textContent || '');
 
     function updateSeatSummary(){
       const seats = Array.from(selectedSeats.keys());
@@ -139,13 +172,29 @@
       confirmSeat.disabled = seats.length === 0;
       confirmSeat.textContent = seats.length > 1 ? `Confirmar ${seats.length} assentos` : 'Confirmar Assento';
       const remaining = paxLimit - seats.length;
+      const premiumCount = seats.filter(seat => selectedSeats.get(seat) === 'premium').length;
+      const premiumExtra = premiumCount * PREMIUM_SURCHARGE;
       const helperBase = remaining > 0
         ? `Selecionados ${seats.length} de ${paxLimit} assento${paxLimit>1?'s':''}.`
         : `Limite atingido: ${paxLimit} assento${paxLimit>1?'s':''}.`;
-      seatHelper.textContent = helperBase;
+      const helperSuffix = premiumCount ? ` · Premium: ${premiumCount} × R$ ${PREMIUM_SURCHARGE.toFixed(0)}` : '';
+      seatHelper.textContent = helperBase + helperSuffix;
       seatHelper.classList.remove('is-error');
       paxLimitHint.textContent = `Limite atual: ${paxLimit}`;
       if (paxCountEl) paxCountEl.textContent = paxLimit;
+      const seatCount = Math.max(seats.length, 1);
+      const basePortion = baseFareValue * seatCount;
+      const totalWithPremium = basePortion + premiumExtra;
+      if (baseFareEl){
+        baseFareEl.textContent = formatBRL(basePortion);
+      }
+      if (confirmSeat){
+        confirmSeat.dataset.premiumCount = String(premiumCount);
+        confirmSeat.dataset.premiumExtra = String(premiumExtra);
+        confirmSeat.dataset.tarifa = formatBRL(basePortion);
+        confirmSeat.dataset.total = formatBRL(totalWithPremium);
+        confirmSeat.dataset.seatCount = String(seatCount);
+      }
     }
 
     let helperTimeout;
@@ -206,18 +255,23 @@
     paxPlus?.addEventListener('click', ()=> adjustPax(1));
 
     confirmSeat?.addEventListener('click', ()=>{
-      if (!selectedSeats.size) return;
+      const seatCount = selectedSeats.size;
+      if (!seatCount) return;
       const seats = Array.from(selectedSeats.keys());
+      const premiumCount = Number(confirmSeat.dataset.premiumCount || '0');
+      const tarifaParam = confirmSeat.dataset.tarifa || formatBRL(baseFareValue * Math.max(seatCount, 1));
       const params = new URLSearchParams({
         origem: confirmSeat.dataset.origem || '',
         destino: confirmSeat.dataset.destino || '',
         data: confirmSeat.dataset.data || '',
-        tarifa: confirmSeat.dataset.tarifa || '',
+        tarifa: tarifaParam,
         codigo: confirmSeat.dataset.codigo || '',
         segmento: confirmSeat.dataset.segmento || 'ida',
-        pax: String(paxLimit),
+        pax: String(Math.max(seatCount, 1)),
         assentos: seats.join(','),
       });
+      if (premiumCount > 0) params.set('premium_count', String(premiumCount));
+      if (confirmSeat.dataset.total) params.set('total', confirmSeat.dataset.total);
       window.location.href = `/resultados/resumo/?${params.toString()}`;
     });
 

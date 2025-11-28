@@ -94,6 +94,7 @@ class Ticket(models.Model):
     preco = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="PAGO")
     criado_em = models.DateTimeField(auto_now_add=True)
+    assentos = models.CharField(max_length=120, blank=True, default="")
 
     class Meta:
         ordering = ["-partida", "-id"]

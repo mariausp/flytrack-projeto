@@ -18,8 +18,8 @@ from .forms import SignupForm, ForgotPasswordForm, ResetPasswordForm
 from .models import PasswordResetToken
 from .models import Ticket
 from django.db.models import Q
-from django.utils.dateparse import parse_date
-from decimal import Decimal
+from django.utils.dateparse import parse_date, parse_datetime
+from decimal import Decimal, InvalidOperation
 
 User = get_user_model()
 
@@ -278,6 +278,7 @@ def selecionar_assento(request):
     return render(request, "selecionar_assento.html", ctx)
 
 
+PREMIUM_SURCHARGE = Decimal("90.00")
 CURRENCY_CLEAN_RE = re.compile(r"[^0-9,.-]")
 
 
@@ -304,15 +305,30 @@ def _extract_summary_data(source):
     data_viagem = source.get("data", "")
     codigo = source.get("codigo", "FT000")
     segmento = source.get("segmento", "ida").lower()
-    pax = source.get("pax")
-    try:
-        pax_total = max(1, min(int(pax), 9)) if pax is not None else 1
-    except (TypeError, ValueError):
-        pax_total = 1
-    tarifa_raw = source.get("tarifa", "")
-    tarifa_decimal = _parse_currency(tarifa_raw)
     assentos_raw = source.get("assentos", "")
     assentos = [s.strip() for s in assentos_raw.split(",") if s.strip()]
+    seat_count = len(assentos)
+    pax_total = max(seat_count, 1)
+    pax = source.get("pax")
+    if pax is not None:
+        try:
+            parsed = max(1, min(int(pax), 9))
+            pax_total = max(parsed, pax_total)
+        except (TypeError, ValueError):
+            pax_total = max(pax_total, 1)
+    tarifa_raw = source.get("tarifa", "")
+    tarifa_decimal = _parse_currency(tarifa_raw)
+    premium_count_raw = source.get("premium_count")
+    try:
+        premium_count = max(0, min(int(premium_count_raw), 9)) if premium_count_raw is not None else 0
+    except (TypeError, ValueError):
+        premium_count = 0
+    premium_total = PREMIUM_SURCHARGE * premium_count
+    total_raw = source.get("total", "")
+    total_decimal = _parse_currency(total_raw)
+    if tarifa_decimal <= 0 and total_decimal > 0:
+        tarifa_decimal = max(total_decimal - premium_total, Decimal("0"))
+    total_valor = total_decimal if total_decimal > 0 else tarifa_decimal + premium_total
     return {
         "origem": origem,
         "destino": destino,
@@ -320,18 +336,85 @@ def _extract_summary_data(source):
         "codigo": codigo,
         "segmento": segmento,
         "pax_total": pax_total,
-        "tarifa_fmt": tarifa_raw or _format_brl(tarifa_decimal),
+        "tarifa_fmt": _format_brl(tarifa_decimal),
         "tarifa_valor": tarifa_decimal,
         "assentos": assentos,
+        "premium_count": premium_count,
+        "premium_total": premium_total,
+        "premium_total_fmt": _format_brl(premium_total) if premium_total > 0 else "R$ 0,00",
+        "total_valor": total_valor,
+        "total_fmt": _format_brl(total_valor) if total_valor > 0 else _format_brl(tarifa_decimal),
+        "has_premium": premium_count > 0,
     }
 
 
 def _summary_for_session(summary: dict) -> dict:
     safe_summary = summary.copy()
-    valor = safe_summary.get("tarifa_valor")
-    if isinstance(valor, Decimal):
-        safe_summary["tarifa_valor"] = str(valor)
+    for key in ("tarifa_valor", "premium_total", "total_valor"):
+        valor = safe_summary.get(key)
+        if isinstance(valor, Decimal):
+            safe_summary[key] = str(valor)
     return safe_summary
+
+
+def _parse_partida_datetime(value: str):
+    dt = None
+    if value:
+        dt = parse_datetime(value)
+        if not dt:
+            parsed_date = parse_date(value)
+            if parsed_date:
+                dt = datetime.datetime.combine(parsed_date, datetime.time(9, 0))
+    if not dt:
+        dt = timezone.now()
+    if timezone.is_naive(dt):
+        dt = timezone.make_aware(dt, timezone.get_current_timezone())
+    return dt
+
+
+def _ensure_decimal(value) -> Decimal:
+    if isinstance(value, Decimal):
+        return value
+    if value is None:
+        return Decimal("0")
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, ValueError, TypeError):
+        return Decimal("0")
+
+
+def _persist_ticket(request, summary: dict, localizador: str):
+    if not request.user.is_authenticated:
+        return
+
+    partida = _parse_partida_datetime(summary.get("data_viagem"))
+    chegada = partida + datetime.timedelta(hours=8)
+    preco = _ensure_decimal(summary.get("total_valor"))
+    if preco <= 0:
+        preco = _ensure_decimal(summary.get("tarifa_valor"))
+    if preco <= 0 and summary.get("tarifa_fmt"):
+        preco = _parse_currency(summary.get("tarifa_fmt"))
+
+    assentos_data = summary.get("assentos") or []
+    if isinstance(assentos_data, str):
+        assentos_str = assentos_data
+    else:
+        assentos_str = ", ".join(assentos_data)
+
+    try:
+        Ticket.objects.create(
+            user=request.user,
+            codigo=localizador,
+            origem=summary.get("origem", "Origem"),
+            destino=summary.get("destino", "Destino"),
+            partida=partida,
+            chegada=chegada,
+            preco=preco,
+            status="PAGO",
+            assentos=assentos_str[:120],
+        )
+    except Exception as exc:
+        print("[CHECKOUT] Não foi possível salvar o ticket:", exc)
 
 
 def resumo_compra(request):
@@ -345,10 +428,9 @@ def resumo_compra(request):
         messages.warning(request, "Selecione ao menos um assento antes de continuar.")
         return redirect("core:resultados")
 
-    total_estimado = summary["tarifa_valor"]
     ctx = {
         "summary": summary,
-        "total_estimado": _format_brl(total_estimado) if total_estimado > 0 else summary["tarifa_fmt"],
+        "total_estimado": summary.get("total_fmt") or summary["tarifa_fmt"],
         "back_url": request.META.get("HTTP_REFERER") or reverse("core:selecionar_assento"),
     }
     return render(request, "resumo_compra.html", ctx)
@@ -386,6 +468,11 @@ def pagamento(request):
                 "summary": summary,
             }
             request.session["checkout_result"] = checkout_result
+            request.session.pop("checkout_summary", None)
+            try:
+                _persist_ticket(request, summary, localizador)
+            except Exception:
+                pass
             messages.success(request, "Pagamento aprovado!")
             return redirect("core:confirmacao")
 

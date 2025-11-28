@@ -38,7 +38,7 @@
           <span class="chip">Atribuição automática</span>
         {% endfor %}
       </div>
-      <div class="info">Valor pago: {{ summary.tarifa_fmt }}</div>
+      <div class="info">Valor pago: {{ summary.total_fmt }}</div>
       <div class="actions">
         <a class="btn btn-primary" href="{% url 'core:historico' %}">Ver histórico</a>
         <a class="btn btn-ghost" href="{% url 'core:home' %}">Voltar ao início</a>
