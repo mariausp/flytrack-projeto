@@ -625,6 +625,32 @@ def reset_password_confirm(request, uidb64: str, token: str):
         form = ResetPasswordForm()
 
     return render(request, "password_reset_confirm.html", {"form": form, "user": user})
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def admin_home(request):
+    return render(request, "admin/adm_home.html")
+
+
+
+@user_passes_test(lambda u: u.is_staff)
+def adicionar_passagem(request):
+
+    voos_disponiveis = Voo.objects.all().order_by('-criado_em')
+
+    if request.method == 'POST':
+        form = VooAdminForm(request.POST)
+        if form.is_valid():
+            voo = form.save()
+            messages.success(request, f"Voo {voo.codigo} cadastrado e disponível para venda!")
+            return redirect('core:adicionar_passagem') # Recarrega a mesma página para ver a tabela atualizada
+    else:
+        form = VooAdminForm()
+    
+
+    return render(request, 'admin/adicionar_passagem.html', {
+        'form': form, 
+        'voos': voos_disponiveis
+    })
 
 @login_required
 @user_passes_test(lambda u: u.is_staff)
