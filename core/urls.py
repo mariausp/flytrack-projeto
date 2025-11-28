@@ -1,6 +1,7 @@
 from django.urls import path
-from . import views
 from django.contrib.auth.views import LogoutView
+
+from . import views, api
 
 app_name = "core"
 
@@ -30,4 +31,7 @@ urlpatterns = [
 
     # Rotas do painel (ajuste quando tiver views específicas)
     path("painel/voo/cadastrar/", views.admin_home, name="voo_cadastrar"),  # provisório
+
+    # API pública autenticada (consumida via JavaScript)
+    path("api/voos/", api.busca_voos, name="api_busca_voos"),
 ]
