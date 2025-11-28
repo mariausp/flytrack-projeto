@@ -280,6 +280,21 @@ def selecionar_assento(request):
 
 PREMIUM_SURCHARGE = Decimal("90.00")
 CURRENCY_CLEAN_RE = re.compile(r"[^0-9,.-]")
+PAYMENT_METHODS = {
+    "cartao": {
+        "label": "Cartão de crédito",
+        "description": "Pague no crédito em até 12x."},
+    "pix": {
+        "label": "PIX",
+        "description": "Aprovação instantânea com QR Code/chave."},
+    "boleto": {
+        "label": "Boleto bancário",
+        "description": "Geramos um boleto com vencimento em 1 dia útil."},
+}
+PAYMENT_METHOD_CHOICES = [
+    {"key": key, "title": meta["label"], "description": meta["description"]}
+    for key, meta in PAYMENT_METHODS.items()
+]
 
 
 def _parse_currency(value: str) -> Decimal:
@@ -316,6 +331,9 @@ def _extract_summary_data(source):
             pax_total = max(parsed, pax_total)
         except (TypeError, ValueError):
             pax_total = max(pax_total, 1)
+    method_raw = (source.get("metodo_pagamento") or source.get("payment_method") or "cartao").lower()
+    if method_raw not in PAYMENT_METHODS:
+        method_raw = "cartao"
     tarifa_raw = source.get("tarifa", "")
     tarifa_decimal = _parse_currency(tarifa_raw)
     premium_count_raw = source.get("premium_count")
@@ -345,6 +363,8 @@ def _extract_summary_data(source):
         "total_valor": total_valor,
         "total_fmt": _format_brl(total_valor) if total_valor > 0 else _format_brl(tarifa_decimal),
         "has_premium": premium_count > 0,
+        "metodo_pagamento": method_raw,
+        "metodo_pagamento_label": PAYMENT_METHODS[method_raw]["label"],
     }
 
 
@@ -432,6 +452,7 @@ def resumo_compra(request):
         "summary": summary,
         "total_estimado": summary.get("total_fmt") or summary["tarifa_fmt"],
         "back_url": request.META.get("HTTP_REFERER") or reverse("core:selecionar_assento"),
+        "payment_methods": PAYMENT_METHOD_CHOICES,
     }
     return render(request, "resumo_compra.html", ctx)
 
@@ -442,29 +463,40 @@ def pagamento(request):
         messages.info(request, "Inicie uma nova busca para finalizar sua compra.")
         return redirect("core:home")
 
+    metodo_pagamento = summary.get("metodo_pagamento", "cartao")
+    if metodo_pagamento not in PAYMENT_METHODS:
+        metodo_pagamento = "cartao"
+    summary["metodo_pagamento"] = metodo_pagamento
+    summary["metodo_pagamento_label"] = PAYMENT_METHODS[metodo_pagamento]["label"]
+    requires_card = metodo_pagamento == "cartao"
     errors = {}
-    data = {"nome": "", "cpf": "", "cartao": "", "validade": "", "cvv": ""}
+    data = {"nome": "", "cpf": "", "cartao": "", "validade": "", "cvv": ""} if requires_card else {}
 
     if request.method == "POST":
-        for field in data.keys():
-            data[field] = request.POST.get(field, "").strip()
+        if requires_card:
+            for field in data.keys():
+                data[field] = request.POST.get(field, "").strip()
 
-        if not data["nome"]:
-            errors["nome"] = "Informe o titular do cartão."
-        if not data["cpf"] or len(re.sub(r"\D", "", data["cpf"])) != 11:
-            errors["cpf"] = "CPF inválido."
-        if not data["cartao"] or len(re.sub(r"\D", "", data["cartao"])) < 13:
-            errors["cartao"] = "Número do cartão inválido."
-        if not data["validade"]:
-            errors["validade"] = "Informe a validade."
-        if not data["cvv"] or len(data["cvv"]) not in (3, 4):
-            errors["cvv"] = "CVV inválido."
+            if not data["nome"]:
+                errors["nome"] = "Informe o titular do cartão."
+            if not data["cpf"] or len(re.sub(r"\D", "", data["cpf"])) != 11:
+                errors["cpf"] = "CPF inválido."
+            if not data["cartao"] or len(re.sub(r"\D", "", data["cartao"])) < 13:
+                errors["cartao"] = "Número do cartão inválido."
+            if not data["validade"]:
+                errors["validade"] = "Informe a validade."
+            if not data["cvv"] or len(data["cvv"]) not in (3, 4):
+                errors["cvv"] = "CVV inválido."
 
-        if not errors:
+        if not requires_card or not errors:
             localizador = f"FT{random.randint(100000, 999999)}"
+            if requires_card:
+                payer_name = data["nome"]
+            else:
+                payer_name = request.user.get_full_name() or request.user.username or "Cliente FlyTrack"
             checkout_result = {
                 "localizador": localizador,
-                "nome": data["nome"],
+                "nome": payer_name,
                 "summary": summary,
             }
             request.session["checkout_result"] = checkout_result
@@ -476,7 +508,15 @@ def pagamento(request):
             messages.success(request, "Pagamento aprovado!")
             return redirect("core:confirmacao")
 
-    return render(request, "pagamento.html", {"summary": summary, "errors": errors, "form": data})
+    context = {
+        "summary": summary,
+        "errors": errors,
+        "form": data,
+        "requires_card": requires_card,
+        "payment_method": metodo_pagamento,
+        "method_info": PAYMENT_METHODS[metodo_pagamento],
+    }
+    return render(request, "pagamento.html", context)
 
 
 def confirmacao(request):

@@ -21,11 +21,17 @@
     .seats{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;}
     .chip{background:#eaf2ff;color:#234579;font-weight:600;border-radius:999px;padding:6px 14px;}
     .total{font-size:26px;font-weight:800;margin:18px 0;}
-    form{display:flex;gap:12px;flex-wrap:wrap;}
+    form{display:flex;flex-direction:column;gap:16px;margin-top:20px;}
     form input[type="hidden"]{display:none;}
     .btn{border:0;border-radius:14px;padding:14px 24px;font-weight:700;font-size:16px;cursor:pointer;}
     .btn-primary{background:#ff5a00;color:#fff;box-shadow:0 12px 24px rgba(255,90,0,.25);}
     .btn-ghost{background:transparent;border:1px solid #d1dae8;color:#41506b;}
+    .payment-options{display:flex;flex-direction:column;gap:12px;margin-top:12px;}
+    .payment-option{display:flex;gap:12px;padding:14px;border:1px solid #dee7f4;border-radius:14px;background:#fff;cursor:pointer;align-items:flex-start;}
+    .payment-option input{margin-top:4px;}
+    .payment-option .value{font-size:17px;}
+    .payment-option p{margin:4px 0 0;font-size:14px;color:#5b6b85;}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;}
   </style>
 </head>
 <body>
@@ -76,10 +82,24 @@
         {% endif %}
       </div>
 
-      <div class="total">Total estimado: {{ total_estimado }}</div>
-
       <form method="post">
         {% csrf_token %}
+        <div>
+          <div class="label">Método de pagamento</div>
+          <div class="payment-options">
+            {% for option in payment_methods %}
+              <label class="payment-option">
+                <input type="radio" name="metodo_pagamento" value="{{ option.key }}" {% if summary.metodo_pagamento == option.key %}checked{% elif not summary.metodo_pagamento and forloop.first %}checked{% endif %} />
+                <div>
+                  <div class="value">{{ option.title }}</div>
+                  <p>{{ option.description }}</p>
+                </div>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="total">Total estimado: {{ total_estimado }}</div>
         <input type="hidden" name="origem" value="{{ summary.origem }}" />
         <input type="hidden" name="destino" value="{{ summary.destino }}" />
         <input type="hidden" name="segmento" value="{{ summary.segmento }}" />
@@ -89,8 +109,10 @@
         <input type="hidden" name="tarifa" value="{{ summary.tarifa_fmt }}" />
         <input type="hidden" name="assentos" value="{{ summary.assentos|join:"," }}" />
         <input type="hidden" name="premium_count" value="{{ summary.premium_count }}" />
-        <button type="submit" class="btn btn-primary">Avançar para pagamento</button>
-        <a class="btn btn-ghost" href="{{ back_url }}">Voltar</a>
+        <div class="actions">
+          <button type="submit" class="btn btn-primary">Avançar para pagamento</button>
+          <a class="btn btn-ghost" href="{{ back_url }}">Voltar</a>
+        </div>
       </form>
     </div>
   </div>

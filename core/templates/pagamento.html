@@ -24,6 +24,9 @@
     .summary h2{margin:0 0 12px;font-size:20px;}
     .row{display:flex;justify-content:space-between;margin-bottom:6px;font-weight:600;}
     .badge{display:inline-block;margin-top:8px;padding:6px 14px;border-radius:999px;background:#eaf2ff;color:#234579;font-weight:600;}
+    .alt-box{background:#f8fbff;border:1px solid #dfe7f4;border-radius:16px;padding:18px;margin-bottom:18px;}
+    .pix-code{font-family:"JetBrains Mono","Fira Code",monospace;font-size:18px;font-weight:600;background:#fff;border:1px dashed #94a3b8;border-radius:12px;padding:12px 16px;margin:12px 0;}
+    .info-text{color:#5b6b85;font-size:15px;line-height:1.5;margin:10px 0;}
   </style>
 </head>
 <body>
@@ -31,35 +34,52 @@
     <div class="grid">
       <section class="card">
         <h1>Pagamento seguro</h1>
-        <form method="post">
-          {% csrf_token %}
-          <label for="nome">Titular do cartão</label>
-          <input id="nome" name="nome" value="{{ form.nome }}" required />
-          {% if errors.nome %}<div class="error">{{ errors.nome }}</div>{% endif %}
+        {% if requires_card %}
+          <form method="post">
+            {% csrf_token %}
+            <label for="nome">Titular do cartão</label>
+            <input id="nome" name="nome" value="{{ form.nome }}" required />
+            {% if errors.nome %}<div class="error">{{ errors.nome }}</div>{% endif %}
 
-          <label for="cpf">CPF</label>
-          <input id="cpf" name="cpf" value="{{ form.cpf }}" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required />
-          {% if errors.cpf %}<div class="error">{{ errors.cpf }}</div>{% endif %}
+            <label for="cpf">CPF</label>
+            <input id="cpf" name="cpf" value="{{ form.cpf }}" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required />
+            {% if errors.cpf %}<div class="error">{{ errors.cpf }}</div>{% endif %}
 
-          <label for="cartao">Número do cartão</label>
-          <input id="cartao" name="cartao" value="{{ form.cartao }}" inputmode="numeric" placeholder="0000 0000 0000 0000" required />
-          {% if errors.cartao %}<div class="error">{{ errors.cartao }}</div>{% endif %}
+            <label for="cartao">Número do cartão</label>
+            <input id="cartao" name="cartao" value="{{ form.cartao }}" inputmode="numeric" placeholder="0000 0000 0000 0000" required />
+            {% if errors.cartao %}<div class="error">{{ errors.cartao }}</div>{% endif %}
 
-          <div style="display:flex;gap:14px;">
-            <div style="flex:1">
-              <label for="validade">Validade</label>
-              <input id="validade" name="validade" value="{{ form.validade }}" placeholder="MM/AA" required />
-              {% if errors.validade %}<div class="error">{{ errors.validade }}</div>{% endif %}
+            <div style="display:flex;gap:14px;">
+              <div style="flex:1">
+                <label for="validade">Validade</label>
+                <input id="validade" name="validade" value="{{ form.validade }}" placeholder="MM/AA" required />
+                {% if errors.validade %}<div class="error">{{ errors.validade }}</div>{% endif %}
+              </div>
+              <div style="flex:1">
+                <label for="cvv">CVV</label>
+                <input id="cvv" name="cvv" value="{{ form.cvv }}" inputmode="numeric" maxlength="4" required />
+                {% if errors.cvv %}<div class="error">{{ errors.cvv }}</div>{% endif %}
+              </div>
             </div>
-            <div style="flex:1">
-              <label for="cvv">CVV</label>
-              <input id="cvv" name="cvv" value="{{ form.cvv }}" inputmode="numeric" maxlength="4" required />
-              {% if errors.cvv %}<div class="error">{{ errors.cvv }}</div>{% endif %}
-            </div>
+
+            <button class="btn" type="submit">Pagar e concluir</button>
+          </form>
+        {% else %}
+          <div class="alt-box">
+            <p class="info-text">Você escolheu <strong>{{ summary.metodo_pagamento_label }}</strong>. {{ method_info.description }}</p>
+            {% if payment_method == 'pix' %}
+              <p class="info-text">Escaneie o QR Code abaixo ou copie a chave estática para concluir o pagamento.</p>
+              <div class="pix-code">pix@flytrack.com.br</div>
+              <p class="info-text">Após a confirmação do PIX, clique em "Confirmar" para liberar o comprovante e seguir para a página final.</p>
+            {% elif payment_method == 'boleto' %}
+              <p class="info-text">Geraremos um boleto com vencimento em 1 dia útil. Você também receberá o PDF por e-mail.</p>
+            {% endif %}
           </div>
-
-          <button class="btn" type="submit">Pagar e concluir</button>
-        </form>
+          <form method="post">
+            {% csrf_token %}
+            <button class="btn" type="submit">Confirmar pagamento {{ summary.metodo_pagamento_label }}</button>
+          </form>
+        {% endif %}
       </section>
 
       <aside class="card summary">
@@ -69,6 +89,7 @@
         <div class="row"><span>Data</span><span>{{ summary.data_viagem|default:"Data a confirmar" }}</span></div>
         <div class="row"><span>Passageiros</span><span>{{ summary.pax_total }}</span></div>
         <div class="row"><span>Assentos</span><span>{{ summary.assentos|join:", "|default:"—" }}</span></div>
+        <div class="row"><span>Método</span><span>{{ summary.metodo_pagamento_label }}</span></div>
         <div class="row" style="margin-top:16px;font-weight:600;"><span>Tarifa base</span><span>{{ summary.tarifa_fmt }}</span></div>
         {% if summary.has_premium %}
           <div class="row" style="font-weight:600;"><span>Premium ({{ summary.premium_count }})</span><span>{{ summary.premium_total_fmt }}</span></div>
