@@ -367,6 +367,11 @@
   if (idaISO){ inpIda.value = idaISO; idaTxt.textContent = fmtDataISO(idaISO); inpVolta.min = idaISO; }
   if (voltaISO){ inpVolta.value = voltaISO; voltaTxt.textContent = fmtDataISO(voltaISO); }
 
+  // Defensive: show that JS loaded and the script will call the API soon.
+  try{
+    if (apiStatusEl) apiStatusEl.textContent = 'Iniciando carregamento de tarifas…';
+  }catch(e){ console.error('Could not update apiStatusEl on start', e); }
+
   // ---------- cards ----------
   function atualizaCards(){
     const oCity = cidadeSemPais(origem).split(",")[0] || "—";
@@ -763,7 +768,22 @@
     });
   });
 
-  consultarTarifas();
+  try{
+    consultarTarifas();
+  }catch(err){
+    console.error('Error while calling consultarTarifas:', err);
+    if (apiStatusEl) apiStatusEl.textContent = 'Erro ao iniciar consulta de tarifas';
+  }
+
+  // Global JS error fallback: show a clear message in the UI to avoid quiet failures.
+  window.addEventListener('error', function(ev){
+    console.error('Global error captured', ev.error || ev.message);
+    if (apiStatusEl) apiStatusEl.textContent = 'Erro interno no carregamento de tarifas';
+  });
+  window.addEventListener('unhandledrejection', function(ev){
+    console.error('Unhandled rejection', ev.reason);
+    if (apiStatusEl) apiStatusEl.textContent = 'Erro interno no carregamento de tarifas';
+  });
 
   if (dynamicResultsEl){
     dynamicResultsEl.addEventListener('click', (event)=>{
