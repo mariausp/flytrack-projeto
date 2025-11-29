@@ -625,13 +625,8 @@ def reset_password_confirm(request, uidb64: str, token: str):
         form = ResetPasswordForm()
 
     return render(request, "password_reset_confirm.html", {"form": form, "user": user})
+
 @login_required
-@user_passes_test(lambda u: u.is_staff)
-def admin_home(request):
-    return render(request, "admin/adm_home.html")
-
-
-
 @user_passes_test(lambda u: u.is_staff)
 def adicionar_passagem(request):
 

@@ -170,6 +170,7 @@
     const iataToAbbr = { 'GRU':'SP','CGH':'SP','GIG':'RJ','EWR':'NYC','JFK':'NYC','BSB':'DF','CNF':'BH','BEL':'BEL','CWB':'CWB','FOR':'FOR','REC':'REC','SSA':'SSA','FLN':'FLN','POA':'POA','MAO':'MAO' };
     if (iata && iataToAbbr[iata]) return iataToAbbr[iata];
 
+ 
     const abbrMap = {
       'sao paulo': 'SP', 'guarulhos': 'SP', 'congonhas': 'SP', 'sp': 'SP',
       'rio de janeiro': 'RJ', 'rio': 'RJ', 'galeao': 'RJ', 'rj': 'RJ',
@@ -188,17 +189,7 @@
       return ab;
     }
     return '—';
-      <label><input type="radio" name="cabin" value="Econômica" checked> Econômica</label>
-      <label><input type="radio" name="cabin" value="Executiva"> Executiva</label>
-      <label><input type="radio" name="cabin" value="Primeira Classe"> Primeira Classe</label>
-    </div>
-
-    <div class="pax-actions">
-      <button type="button" class="btn-ghost" id="paxCancel">Cancelar</button>
-      <button type="button" class="btn-apply" id="paxApply">Aplicar</button>
-    </div>
-  </div>
-</div>
+ 
 
 
     <button class="btn" id="refazerBusca">🔎 Buscar</button>
@@ -281,15 +272,11 @@
       weekday:"short", day:"2-digit", month:"short", year:"numeric"
     }).replace(/\.$/,"");
   }
-  function cidadeSemPais(txt){
-    return (txt||"").replace(/\s*-\s*[A-Z]{2,}.*$/,"");
-  }
   function guessIATA(txt){
-<<<<<<< HEAD
     txt = (txt||"").toLowerCase();
     // Normalize accents and collapse punctuation
     if (txt.normalize) {
-      txt = txt.normalize('NFD').replace(/\p{Diacritic}/gu, '');
+      txt = txt.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     }
     txt = txt.replace(/[\W_]+/g, ' ').trim();
     // Common typo fixes (ex.: 'Sãop Paulo' -> 'Sao Paulo')
@@ -309,13 +296,16 @@
   function guessAbbrev(txt){
     txt = (txt||"").toLowerCase();
     if (txt.normalize) {
-      txt = txt.normalize('NFD').replace(/\p{Diacritic}/gu, '');
+      txt = txt.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     }
     txt = txt.replace(/[\W_]+/g, ' ').trim();
     txt = txt.replace(/\bsaop\b/g, 'sao');
     txt = txt.replace(/\bsaopaulo\b/g, 'sao paulo');
     // direct IATA -> abbr (e.g. GRU => SP)
     const direct = txt.match(/\b([a-zA-Z]{3})\b/);
+    const iata = (direct && direct[1]) ? direct[1].toUpperCase() : null;
+    const iataToAbbr = { 'GRU':'SP','CGH':'SP','GIG':'RJ','EWR':'NYC','JFK':'NYC','BSB':'DF','CNF':'BH','BEL':'BEL','CWB':'CWB','FOR':'FOR','REC':'REC','SSA':'SSA','FLN':'FLN','POA':'POA','MAO':'MAO' };
+    if (iata && iataToAbbr[iata]) return iataToAbbr[iata];
     const iata = (direct && direct[1]) ? direct[1].toUpperCase() : null;
     const iataToAbbr = { 'GRU':'SP','CGH':'SP','GIG':'RJ','EWR':'NYC','JFK':'NYC','BSB':'DF','CNF':'BH','BEL':'BEL','CWB':'CWB','FOR':'FOR','REC':'REC','SSA':'SSA','FLN':'FLN','POA':'POA','MAO':'MAO' };
     if (iata && iataToAbbr[iata]) return iataToAbbr[iata];
@@ -338,98 +328,6 @@
       return ab;
     }
     return '—';
-=======
-    txt = (txt||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    
-    // Brasil - Capitais e principais cidades
-    if (txt.includes("sao paulo") || txt.includes("guarulhos")) return "GRU";
-    if (txt.includes("rio de janeiro")) return "GIG";
-    if (txt.includes("brasilia")) return "BSB";
-    if (txt.includes("belo horizonte") || txt.includes("confins")) return "CNF";
-    if (txt.includes("salvador")) return "SSA";
-    if (txt.includes("fortaleza")) return "FOR";
-    if (txt.includes("recife")) return "REC";
-    if (txt.includes("curitiba")) return "CWB";
-    if (txt.includes("porto alegre")) return "POA";
-    if (txt.includes("manaus")) return "MAO";
-    if (txt.includes("belem")) return "BEL";
-    if (txt.includes("goiania")) return "GYN";
-    if (txt.includes("campinas") || txt.includes("viracopos")) return "VCP";
-    if (txt.includes("vitoria")) return "VIX";
-    if (txt.includes("florianopolis")) return "FLN";
-    if (txt.includes("natal")) return "NAT";
-    if (txt.includes("maceio")) return "MCZ";
-    if (txt.includes("joao pessoa")) return "JPA";
-    if (txt.includes("cuiaba")) return "CGB";
-    if (txt.includes("porto velho")) return "PVH";
-    if (txt.includes("aracaju")) return "AJU";
-    if (txt.includes("sao luis")) return "SLZ";
-    if (txt.includes("teresina")) return "THE";
-    if (txt.includes("palmas")) return "PMW";
-    if (txt.includes("macapa")) return "MCP";
-    if (txt.includes("rio branco")) return "RBR";
-    if (txt.includes("boa vista")) return "BVB";
-    if (txt.includes("campo grande")) return "CGR";
-    
-    // Estados Unidos
-    if (txt.includes("new york") || txt.includes("nova iorque")) return "JFK";
-    if (txt.includes("newark")) return "EWR";
-    if (txt.includes("los angeles")) return "LAX";
-    if (txt.includes("chicago")) return "ORD";
-    if (txt.includes("miami")) return "MIA";
-    if (txt.includes("orlando")) return "MCO";
-    if (txt.includes("san francisco")) return "SFO";
-    if (txt.includes("washington")) return "IAD";
-    if (txt.includes("boston")) return "BOS";
-    if (txt.includes("atlanta")) return "ATL";
-    if (txt.includes("dallas")) return "DFW";
-    if (txt.includes("houston")) return "IAH";
-    if (txt.includes("las vegas")) return "LAS";
-    if (txt.includes("seattle")) return "SEA";
-    if (txt.includes("philadelphia")) return "PHL";
-    if (txt.includes("phoenix")) return "PHX";
-    
-    // Europa
-    if (txt.includes("londres") || txt.includes("london")) return "LHR";
-    if (txt.includes("paris")) return "CDG";
-    if (txt.includes("madrid")) return "MAD";
-    if (txt.includes("barcelona")) return "BCN";
-    if (txt.includes("roma") || txt.includes("rome")) return "FCO";
-    if (txt.includes("amsterdam")) return "AMS";
-    if (txt.includes("frankfurt")) return "FRA";
-    if (txt.includes("munique") || txt.includes("munich")) return "MUC";
-    if (txt.includes("berlin")) return "BER";
-    if (txt.includes("dublin")) return "DUB";
-    if (txt.includes("lisboa") || txt.includes("lisbon")) return "LIS";
-    if (txt.includes("porto") && txt.includes("portugal")) return "OPO";
-    if (txt.includes("milao") || txt.includes("milan")) return "MXP";
-    if (txt.includes("viena") || txt.includes("vienna")) return "VIE";
-    if (txt.includes("zurique") || txt.includes("zurich")) return "ZRH";
-    
-    // América Latina
-    if (txt.includes("buenos aires")) return "EZE";
-    if (txt.includes("santiago")) return "SCL";
-    if (txt.includes("lima")) return "LIM";
-    if (txt.includes("bogota")) return "BOG";
-    if (txt.includes("ciudad de mexico") || txt.includes("mexico city")) return "MEX";
-    if (txt.includes("cancun")) return "CUN";
-    if (txt.includes("montevideo")) return "MVD";
-    if (txt.includes("quito")) return "UIO";
-    if (txt.includes("caracas")) return "CCS";
-    if (txt.includes("havana") || txt.includes("havanna")) return "HAV";
-    if (txt.includes("panama")) return "PTY";
-    
-    // Ásia e Oceania
-    if (txt.includes("tokyo") || txt.includes("toquio")) return "NRT";
-    if (txt.includes("dubai")) return "DXB";
-    if (txt.includes("singapore") || txt.includes("singapura")) return "SIN";
-    if (txt.includes("hong kong")) return "HKG";
-    if (txt.includes("sydney")) return "SYD";
-    if (txt.includes("melbourne")) return "MEL";
-    if (txt.includes("auckland")) return "AKL";
-    
-    return "XXX";
->>>>>>> 0735d66 (arrumei layout assentos e iata)
   }
   const todayISO = (()=>{ const d=new Date(), p=n=>String(n).padStart(2,'0');
     return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; })();
@@ -496,52 +394,59 @@
   atualizaCards();
 
   // ---------- abrir datepicker ----------
-  function openPicker(inputEl){
-    if (!inputEl) return;
-    if (typeof inputEl.showPicker === "function"){
-      try { inputEl.showPicker(); return; } catch(_) {}
+  function guessIATA(txt){
+    txt = (txt||"").toLowerCase();
+    // Normalize accents and collapse punctuation
+    if (txt.normalize) {
+      txt = txt.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     }
-    inputEl.focus();
-    try { inputEl.click(); } catch(_) {}
-    setTimeout(()=> {
-      inputEl.dispatchEvent(new KeyboardEvent("keydown",{key:"ArrowDown", altKey:true, bubbles:true, cancelable:true}));
-    },0);
-  }
+    txt = txt.replace(/[\W_]+/g, ' ').trim();
+    // Common typo fixes (ex.: 'Sãop Paulo' -> 'Sao Paulo')
+    txt = txt.replace(/\bsaop\b/g, 'sao');
+    txt = txt.replace(/\bsaopaulo\b/g, 'sao paulo');
 
-  // ---------- sincroniza URL ----------
-  function syncQS(){
-    const p = new URLSearchParams(location.search);
-    p.set("origem", origem);
-    p.set("destino", destino);
-    p.set("modo",   modo);
-    idaISO   ? p.set("data",  idaISO)   : p.delete("data");
-    (voltaISO && modo==='rt') ? p.set("volta", voltaISO) : p.delete("volta");
-    const totalPax = getTotalPax();
-    totalPax > 1 ? p.set("pax", totalPax) : p.delete("pax");
-    history.replaceState(null, "", location.pathname + "?" + p.toString());
-  }
+    // Direct IATA detection (if user entered the code)
+    const direct = txt.match(/\b([a-zA-Z]{3})\b/);
+    if (direct && direct[1]) return direct[1].toUpperCase();
 
-  let apiFetchTimer;
-  function scheduleAPIUpdate(){
-    clearTimeout(apiFetchTimer);
-    apiFetchTimer = setTimeout(consultarTarifas, 250);
-  }
+    // No automatic mapping from city name -> IATA any more.
+    // Direct IATA detection above will still return a 3-letter code if the user typed it.
 
-  function handleStateChange(){
-    atualizaCards();
-    syncQS();
-    scheduleAPIUpdate();
+    return 'XXX';
   }
+  // Return a short city abbreviation (e.g. SP, RJ, NY) for display
+  function guessAbbrev(txt){
+    txt = (txt||"").toLowerCase();
+    if (txt.normalize) {
+      txt = txt.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+    txt = txt.replace(/[\W_]+/g, ' ').trim();
+    txt = txt.replace(/\bsaop\b/g, 'sao');
+    txt = txt.replace(/\bsaopaulo\b/g, 'sao paulo');
+    // direct IATA -> abbr (e.g. GRU => SP)
+    const direct = txt.match(/\b([a-zA-Z]{3})\b/);
+    const iata = (direct && direct[1]) ? direct[1].toUpperCase() : null;
+    const iataToAbbr = { 'GRU':'SP','CGH':'SP','GIG':'RJ','EWR':'NYC','JFK':'NYC','BSB':'DF','CNF':'BH','BEL':'BEL','CWB':'CWB','FOR':'FOR','REC':'REC','SSA':'SSA','FLN':'FLN','POA':'POA','MAO':'MAO' };
+    if (iata && iataToAbbr[iata]) return iataToAbbr[iata];
 
-  function openSeatSelection(opts={}){
-    const segmento = opts.segmento || 'ida';
-    const params = new URLSearchParams({
-      segmento,
-      codigo: opts.codigo || (segmento === 'ida' ? 'FT230' : 'FT231'),
-      // for 'volta' we will pass reversed origin/destination (destino -> origem)
-      origem: opts.origem || origem,
-      destino: opts.destino || destino,
-    });
+    const abbrMap = {
+      'sao paulo': 'SP', 'guarulhos': 'SP', 'congonhas': 'SP', 'sp': 'SP',
+      'rio de janeiro': 'RJ', 'rio': 'RJ', 'galeao': 'RJ', 'rj': 'RJ',
+      'belo horizonte': 'BH', 'belem': 'BEL', 'brasilia': 'DF', 'recife': 'REC', 'salvador': 'SSA',
+      'fortaleza': 'FOR', 'curitiba': 'CWB', 'florianopolis': 'FLN', 'porto alegre': 'POA', 'manaus': 'MAO',
+      'new york': 'NY', 'novaiorque': 'NY', 'londres': 'LON', 'london': 'LON'
+    };
+    for (const k in abbrMap){
+      if (txt.includes(k)) return abbrMap[k];
+    }
+    // fallback: try to make an abbreviation from city words (first letters)
+    const parts = txt.split(/\s+/).filter(Boolean);
+    if (parts.length === 1 && parts[0].length <= 3) return parts[0].toUpperCase();
+    if (parts.length >= 2){
+      const ab = parts.map(p=>p[0]).slice(0,2).join('').toUpperCase();
+      return ab;
+    }
+    return '—';
     const dataSegment = opts.data || (segmento === 'volta' ? (voltaISO || idaISO || '') : (idaISO || ''));
     if (dataSegment) params.set('data', dataSegment);
     if (opts.tarifa) params.set('tarifa', opts.tarifa);
