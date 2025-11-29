@@ -105,3 +105,22 @@ class Ticket(models.Model):
 
     def __str__(self):
         return f"{self.codigo} — {self.origem}→{self.destino}"
+
+class Voo(models.Model):
+    codigo = models.CharField("Número do Voo/Localizador", max_length=20)
+    origem = models.CharField(max_length=64)
+    destino = models.CharField(max_length=64)
+    partida = models.DateTimeField("Data/hora de partida")
+    chegada = models.DateTimeField("Data/hora de chegada", null=True, blank=True)
+    preco = models.DecimalField("Preço (R$)", max_digits=10, decimal_places=2)
+    
+    # Voos cadastrados mais recentemente aparecem primeiro no admin
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Voo (Oferta)"
+        verbose_name_plural = "Voos (Ofertas)"
+        ordering = ["-partida"]
+
+    def __str__(self):
+        return f"Voo {self.codigo}: {self.origem} -> {self.destino} (R$ {self.preco})"

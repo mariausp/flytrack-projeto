@@ -16,7 +16,8 @@ urlpatterns = [
     # Autenticação
     path("signup/", views.signup, name="signup"),
     path("login/", views.login_view, name="login"),
-    path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
+    # Use namespaced view name so reverse resolves correctly when called from elsewhere
+    path('logout/', LogoutView.as_view(next_page='core:login'), name='logout'),
 
     # Esqueci minha senha (custom)
     path("senha/esqueci/", views.forgot_password, name="password_reset"),
@@ -37,9 +38,11 @@ urlpatterns = [
     path("painel/produtos/", views.admin_produtos, name="admin_produtos"),
     path("painel/configuracoes/", views.admin_configuracoes, name="admin_configuracoes"),
 
-    # Rotas do painel (ajuste quando tiver views específicas)
-    path("painel/voo/cadastrar/", views.admin_home, name="voo_cadastrar"),  # provisório
 
+    path("painel/passagem/nova/", views.adicionar_passagem, name="adicionar_passagem"),
+
+    # Rotas antigas ou provisórias
+    path("painel/voo/cadastrar/", views.admin_home, name="voo_cadastrar"),
     # Seleção de assentos (pós-resultados)
     path("resultados/assentos/", views.selecionar_assento, name="selecionar_assento"),
     path("checkout/pagamento/", views.pagamento, name="pagamento"),

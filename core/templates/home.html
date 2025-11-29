@@ -132,6 +132,14 @@
           <li><a href="{% url 'core:contato' %}">Contato</a></li>
 
           {% if user.is_authenticated %}
+          {% if user.is_staff %}
+    <li class="nav-item">
+        <a href="{% url 'core:adicionar_passagem' %}" 
+           style="background-color: #ffc107; color: #000; padding: 8px 15px; border-radius: 20px; text-decoration: none; font-weight: bold; margin-right: 15px;">
+           + Add Voo
+        </a>
+    </li>
+{% endif %}
             <li class="user-menu">
               <span class="user-chip">Olá, {{ user.get_full_name|default:user.username }}!</span>
               <form action="{% url 'logout' %}" method="post" style="display:inline;">

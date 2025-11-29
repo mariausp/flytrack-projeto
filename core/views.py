@@ -21,6 +21,11 @@ from django.db.models import Q
 from django.utils.dateparse import parse_date, parse_datetime
 from decimal import Decimal, InvalidOperation
 
+from .forms import SignupForm, ForgotPasswordForm, ResetPasswordForm, VooAdminForm
+from .models import PasswordResetToken, Ticket, Voo
+import hashlib, secrets, datetime, textwrap
+from base64 import urlsafe_b64encode, urlsafe_b64decode
+
 User = get_user_model()
 
 @login_required
@@ -624,6 +629,32 @@ def reset_password_confirm(request, uidb64: str, token: str):
         form = ResetPasswordForm()
 
     return render(request, "password_reset_confirm.html", {"form": form, "user": user})
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def admin_home(request):
+    return render(request, "admin/adm_home.html")
+
+
+
+@user_passes_test(lambda u: u.is_staff)
+def adicionar_passagem(request):
+
+    voos_disponiveis = Voo.objects.all().order_by('-criado_em')
+
+    if request.method == 'POST':
+        form = VooAdminForm(request.POST)
+        if form.is_valid():
+            voo = form.save()
+            messages.success(request, f"Voo {voo.codigo} cadastrado e disponível para venda!")
+            return redirect('core:adicionar_passagem') # Recarrega a mesma página para ver a tabela atualizada
+    else:
+        form = VooAdminForm()
+    
+
+    return render(request, 'admin/adicionar_passagem.html', {
+        'form': form, 
+        'voos': voos_disponiveis
+    })
 
 def reset_password_done(request): return render(request, "password_reset_done.html")
 def reset_password_complete(request): return render(request, "password_reset_complete.html")
