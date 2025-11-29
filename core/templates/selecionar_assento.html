@@ -27,18 +27,26 @@
     .summary p{margin:0;color:var(--muted);}  
     .badge{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:#eef2ff;color:#2b4d9f;font-weight:600;font-size:13px;}
 
-    .seats{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:18px;}
-    .seat-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-items:center;}
-    .seat-row span{grid-column:1/-1;color:var(--muted);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px;}
-    .seat{position:relative;border:1px solid var(--line);border-radius:10px;padding:10px 0;text-align:center;font-weight:700;background:#f9fbff;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:2px;align-items:center;}
-    .seat[data-status="ocupado"]{background:#f3f4f6;color:#a3a3a3;border-style:dashed;cursor:not-allowed;}
-    .seat[data-status="ocupado"]::after{content:"x";font-size:11px;position:absolute;right:6px;top:4px;color:#d34747;}
-    .seat[data-status="premium"]{background:#fff5e5;border-color:#f7c27d;}
-    .seat.is-selected{border-color:#2f80ed;box-shadow:0 0 0 3px rgba(47,128,237,.2);}
-    .seat-label{font-size:13px;}
-    .seat-tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#8290a3;}
+    .seats{display:flex;flex-direction:column;gap:12px;margin-top:24px;padding:20px;background:#f9fbff;border-radius:16px;border:2px dashed #dfe5f2;}
+    .plane-header{text-align:center;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--line);}
+    .plane-header h3{margin:0 0 8px;font-size:18px;color:var(--ink);}
+    .plane-header p{margin:0;font-size:13px;color:var(--muted);}
+    .seat-row{display:grid;grid-template-columns:auto repeat(3,1fr) 40px repeat(3,1fr);gap:8px;align-items:center;padding:8px 12px;background:#fff;border-radius:10px;box-shadow:0 2px 4px rgba(0,0,0,.03);}
+    .seat-row-label{font-weight:700;color:var(--muted);font-size:14px;min-width:40px;text-align:center;}
+    .aisle{grid-column:5;display:flex;align-items:center;justify-content:center;color:#c7d1e0;font-size:11px;font-weight:600;letter-spacing:.1em;}
+    .seat{position:relative;border:2px solid var(--line);border-radius:8px;padding:12px 8px;text-align:center;font-weight:700;background:#fff;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:2px;align-items:center;min-height:50px;justify-content:center;}
+    .seat:hover:not([data-status="ocupado"]){transform:translateY(-2px);box-shadow:0 4px 8px rgba(0,0,0,.1);}
+    .seat[data-status="ocupado"]{background:#f3f4f6;color:#a3a3a3;border-color:#e5e7eb;border-style:dashed;cursor:not-allowed;}
+    .seat[data-status="ocupado"]::after{content:"✕";font-size:14px;position:absolute;right:6px;top:6px;color:#d34747;}
+    .seat[data-status="premium"]{background:#fff9f0;border-color:#f7c27d;box-shadow:0 0 0 2px #fff5e5;}
+    .seat.is-selected{border-color:#2f80ed;background:#eef5ff;box-shadow:0 0 0 3px rgba(47,128,237,.2);transform:scale(1.05);}
+    .seat-label{font-size:14px;font-weight:800;}
+    .seat-tag{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#8290a3;}
     .seat[data-status="premium"] .seat-tag{color:#c26a00;}
     .seat[data-status="ocupado"] .seat-tag{color:#a3a3a3;}
+    .legend{display:flex;gap:20px;justify-content:center;margin-top:20px;flex-wrap:wrap;}
+    .legend-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);}
+    .legend-box{width:20px;height:20px;border-radius:4px;border:2px solid var(--line);}
     .seat-helper{margin:0;color:var(--muted);}
     .seat-helper.is-error{color:#c0392b;}
     .pax-stepper{display:flex;align-items:center;justify-content:space-between;background:#f7f9ff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:8px 0 0;gap:16px;}
@@ -64,24 +72,49 @@
       <p>{{ data_viagem|default:"Data a confirmar" }} · Voo {{ codigo }} · Segmento {{ segmento|title }}</p>
       <div class="badge">Tarifa {{ tarifa|default:"R$ -" }}</div>
 
-      <div class="seats" id="seatGrid">
-        {% for row in seat_rows %}
-          <div class="seat-row">
-            <span>Fileira {{ row.row }}</span>
-            {% for seat in row.seats %}
-              <button class="seat" type="button" data-seat="{{ seat.label }}" data-status="{{ seat.status }}">
-                <span class="seat-label">{{ seat.label }}</span>
-                {% if seat.status == 'premium' %}
-                  <span class="seat-tag">Premium</span>
-                {% elif seat.status == 'ocupado' %}
-                  <span class="seat-tag">Ocupado</span>
-                {% else %}
-                  <span class="seat-tag">Livre</span>
+      <div class="seats">
+        <div class="plane-header">
+          <h3>✈️ Layout da Aeronave</h3>
+          <p>A • B • C &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp; Corredor &nbsp;&nbsp;|&nbsp;&nbsp;&nbsp; D • E • F</p>
+        </div>
+        <div id="seatGrid">
+          {% for row in seat_rows %}
+            <div class="seat-row">
+              <div class="seat-row-label">{{ row.row }}</div>
+              {% for seat in row.seats %}
+                {% if forloop.counter == 4 %}
+                  <div class="aisle">━━</div>
                 {% endif %}
-              </button>
-            {% endfor %}
+                <button class="seat" type="button" data-seat="{{ seat.label }}" data-status="{{ seat.status }}">
+                  <span class="seat-label">{{ seat.label }}</span>
+                  {% if seat.status == 'premium' %}
+                    <span class="seat-tag">⭐</span>
+                  {% elif seat.status == 'ocupado' %}
+                    <span class="seat-tag">•</span>
+                  {% endif %}
+                </button>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-box" style="background:#fff;border-color:#dfe5f2;"></div>
+            <span>Disponível</span>
           </div>
-        {% endfor %}
+          <div class="legend-item">
+            <div class="legend-box" style="background:#fff9f0;border-color:#f7c27d;"></div>
+            <span>Premium</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-box" style="background:#f3f4f6;border-color:#e5e7eb;border-style:dashed;"></div>
+            <span>Ocupado</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-box" style="background:#eef5ff;border-color:#2f80ed;"></div>
+            <span>Selecionado</span>
+          </div>
+        </div>
       </div>
     </section>
 

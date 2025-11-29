@@ -146,8 +146,8 @@
 
   /* cards de voos */
   .card{
-    background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px;
-    display:grid; grid-template-columns:120px 1fr 1fr 120px 160px; align-items:center; gap:12px; margin-top:14px;
+    background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px;
+    display:grid; grid-template-columns:100px 1fr 1fr 140px auto; align-items:center; gap:14px; margin-top:14px;
   }
   @media (max-width:900px){
     .card{grid-template-columns:1fr 1fr; grid-auto-rows:auto}
@@ -157,10 +157,12 @@
   .sub{color:var(--muted); font-weight:600}
   .big{font-size:30px; font-weight:900; text-align:center}
   .btn-seat{
-    border:0; background:#106fb6; color:#fff; font-weight:800; padding:12px 18px; border-radius:999px; cursor:pointer;
+    border:0; background:#106fb6; color:#fff; font-weight:700; padding:10px 16px; border-radius:10px; cursor:pointer;
+    white-space:nowrap; font-size:14px; transition:.2s;
   }
-  .price-col{text-align:center}
-  .price-col .price{font-size:34px; font-weight:900}
+  .btn-seat:hover{background:#0d5a95; transform:translateY(-1px); box-shadow:0 4px 8px rgba(16,111,182,.2);}
+  .price-col{text-align:right; display:flex; flex-direction:column; gap:6px; align-items:flex-end;}
+  .price-col .price{font-size:32px; font-weight:900; line-height:1;}
   .buy{border:0; background:#ff8a50; color:#fff; font-weight:900; padding:14px 18px; border-radius:999px; cursor:pointer}
 
   .bar{height:1px;background:var(--line);margin:12px 0}
@@ -360,6 +362,8 @@
       </div>
       <div class="price-col">
         <div class="price" id="precoRecomendado">R$ -</div>
+      </div>
+      <div>
         <a class="btn-seat" href="{{ selecionar_assento_url }}?segmento=ida{% if default_origem %}&origem={{ default_origem|urlencode }}{% endif %}{% if default_destino %}&destino={{ default_destino|urlencode }}{% endif %}{% if default_data %}&data={{ default_data|urlencode }}{% endif %}{% if default_pax %}&pax={{ default_pax|urlencode }}{% endif %}" data-segment="ida" data-codigo="FT230">Assento</a>
       </div>
       <div class="bar" style="grid-column:1/-1"></div>
@@ -383,6 +387,8 @@
       </div>
       <div class="price-col">
         <div class="muted" id="precoMaisBarato">R$ -</div>
+      </div>
+      <div>
         <a class="btn-seat" href="{{ selecionar_assento_url }}?segmento=volta{% if default_destino %}&origem={{ default_destino|urlencode }}{% endif %}{% if default_origem %}&destino={{ default_origem|urlencode }}{% endif %}{% if default_volta %}&data={{ default_volta|urlencode }}{% endif %}{% if default_pax %}&pax={{ default_pax|urlencode }}{% endif %}" data-segment="volta" data-codigo="FT231">Assento</a>
       </div>
       <div style="grid-column:1/-1; display:flex; justify-content:flex-end; gap:16px; align-items:center; margin-top:4px">
@@ -412,11 +418,95 @@
     return (txt||"").replace(/\s*-\s*[A-Z]{2,}.*$/,"");
   }
   function guessIATA(txt){
-    txt = (txt||"").toLowerCase();
-    if (txt.includes("são paulo")||txt.includes("sao paulo")) return "GRU";
+    txt = (txt||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
+    // Brasil - Capitais e principais cidades
+    if (txt.includes("sao paulo") || txt.includes("guarulhos")) return "GRU";
     if (txt.includes("rio de janeiro")) return "GIG";
-    if (txt.includes("new york")||txt.includes("nova iorque")) return "EWR";
-    if (txt.includes("brasília")||txt.includes("brasilia")) return "BSB";
+    if (txt.includes("brasilia")) return "BSB";
+    if (txt.includes("belo horizonte") || txt.includes("confins")) return "CNF";
+    if (txt.includes("salvador")) return "SSA";
+    if (txt.includes("fortaleza")) return "FOR";
+    if (txt.includes("recife")) return "REC";
+    if (txt.includes("curitiba")) return "CWB";
+    if (txt.includes("porto alegre")) return "POA";
+    if (txt.includes("manaus")) return "MAO";
+    if (txt.includes("belem")) return "BEL";
+    if (txt.includes("goiania")) return "GYN";
+    if (txt.includes("campinas") || txt.includes("viracopos")) return "VCP";
+    if (txt.includes("vitoria")) return "VIX";
+    if (txt.includes("florianopolis")) return "FLN";
+    if (txt.includes("natal")) return "NAT";
+    if (txt.includes("maceio")) return "MCZ";
+    if (txt.includes("joao pessoa")) return "JPA";
+    if (txt.includes("cuiaba")) return "CGB";
+    if (txt.includes("porto velho")) return "PVH";
+    if (txt.includes("aracaju")) return "AJU";
+    if (txt.includes("sao luis")) return "SLZ";
+    if (txt.includes("teresina")) return "THE";
+    if (txt.includes("palmas")) return "PMW";
+    if (txt.includes("macapa")) return "MCP";
+    if (txt.includes("rio branco")) return "RBR";
+    if (txt.includes("boa vista")) return "BVB";
+    if (txt.includes("campo grande")) return "CGR";
+    
+    // Estados Unidos
+    if (txt.includes("new york") || txt.includes("nova iorque")) return "JFK";
+    if (txt.includes("newark")) return "EWR";
+    if (txt.includes("los angeles")) return "LAX";
+    if (txt.includes("chicago")) return "ORD";
+    if (txt.includes("miami")) return "MIA";
+    if (txt.includes("orlando")) return "MCO";
+    if (txt.includes("san francisco")) return "SFO";
+    if (txt.includes("washington")) return "IAD";
+    if (txt.includes("boston")) return "BOS";
+    if (txt.includes("atlanta")) return "ATL";
+    if (txt.includes("dallas")) return "DFW";
+    if (txt.includes("houston")) return "IAH";
+    if (txt.includes("las vegas")) return "LAS";
+    if (txt.includes("seattle")) return "SEA";
+    if (txt.includes("philadelphia")) return "PHL";
+    if (txt.includes("phoenix")) return "PHX";
+    
+    // Europa
+    if (txt.includes("londres") || txt.includes("london")) return "LHR";
+    if (txt.includes("paris")) return "CDG";
+    if (txt.includes("madrid")) return "MAD";
+    if (txt.includes("barcelona")) return "BCN";
+    if (txt.includes("roma") || txt.includes("rome")) return "FCO";
+    if (txt.includes("amsterdam")) return "AMS";
+    if (txt.includes("frankfurt")) return "FRA";
+    if (txt.includes("munique") || txt.includes("munich")) return "MUC";
+    if (txt.includes("berlin")) return "BER";
+    if (txt.includes("dublin")) return "DUB";
+    if (txt.includes("lisboa") || txt.includes("lisbon")) return "LIS";
+    if (txt.includes("porto") && txt.includes("portugal")) return "OPO";
+    if (txt.includes("milao") || txt.includes("milan")) return "MXP";
+    if (txt.includes("viena") || txt.includes("vienna")) return "VIE";
+    if (txt.includes("zurique") || txt.includes("zurich")) return "ZRH";
+    
+    // América Latina
+    if (txt.includes("buenos aires")) return "EZE";
+    if (txt.includes("santiago")) return "SCL";
+    if (txt.includes("lima")) return "LIM";
+    if (txt.includes("bogota")) return "BOG";
+    if (txt.includes("ciudad de mexico") || txt.includes("mexico city")) return "MEX";
+    if (txt.includes("cancun")) return "CUN";
+    if (txt.includes("montevideo")) return "MVD";
+    if (txt.includes("quito")) return "UIO";
+    if (txt.includes("caracas")) return "CCS";
+    if (txt.includes("havana") || txt.includes("havanna")) return "HAV";
+    if (txt.includes("panama")) return "PTY";
+    
+    // Ásia e Oceania
+    if (txt.includes("tokyo") || txt.includes("toquio")) return "NRT";
+    if (txt.includes("dubai")) return "DXB";
+    if (txt.includes("singapore") || txt.includes("singapura")) return "SIN";
+    if (txt.includes("hong kong")) return "HKG";
+    if (txt.includes("sydney")) return "SYD";
+    if (txt.includes("melbourne")) return "MEL";
+    if (txt.includes("auckland")) return "AKL";
+    
     return "XXX";
   }
   const todayISO = (()=>{ const d=new Date(), p=n=>String(n).padStart(2,'0');
