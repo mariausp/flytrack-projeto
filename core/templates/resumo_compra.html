@@ -1,0 +1,120 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Resumo da Compra — Fly Track</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,sans-serif;background:#f4f7fb;color:#0b1e45;}
+    .wrap{max-width:960px;margin:32px auto;padding:0 18px;}
+    .card{background:#fff;border:1px solid #e0e6ef;border-radius:20px;padding:28px;box-shadow:0 20px 40px rgba(10,35,60,.08);}
+    h1{margin:0 0 24px;font-size:30px;}
+    .summary{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;}
+    .summary div{background:#f8fbff;border:1px solid #dee7f4;border-radius:14px;padding:14px;}
+    .label{font-size:13px;text-transform:uppercase;color:#587093;letter-spacing:.08em;margin-bottom:4px;}
+    .value{font-size:18px;font-weight:700;}
+    ul{list-style:none;padding:0;margin:0;}
+    .seats{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;}
+    .chip{background:#eaf2ff;color:#234579;font-weight:600;border-radius:999px;padding:6px 14px;}
+    .total{font-size:26px;font-weight:800;margin:18px 0;}
+    form{display:flex;flex-direction:column;gap:16px;margin-top:20px;}
+    form input[type="hidden"]{display:none;}
+    .btn{border:0;border-radius:14px;padding:14px 24px;font-weight:700;font-size:16px;cursor:pointer;}
+    .btn-primary{background:#ff5a00;color:#fff;box-shadow:0 12px 24px rgba(255,90,0,.25);}
+    .btn-ghost{background:transparent;border:1px solid #d1dae8;color:#41506b;}
+    .payment-options{display:flex;flex-direction:column;gap:12px;margin-top:12px;}
+    .payment-option{display:flex;gap:12px;padding:14px;border:1px solid #dee7f4;border-radius:14px;background:#fff;cursor:pointer;align-items:flex-start;}
+    .payment-option input{margin-top:4px;}
+    .payment-option .value{font-size:17px;}
+    .payment-option p{margin:4px 0 0;font-size:14px;color:#5b6b85;}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Revise sua compra</h1>
+      <div class="summary">
+        <div>
+          <div class="label">Trecho</div>
+          <div class="value">{{ summary.origem }} → {{ summary.destino }}</div>
+        </div>
+        <div>
+          <div class="label">Segmento</div>
+          <div class="value">{{ summary.segmento|title }}</div>
+        </div>
+        <div>
+          <div class="label">Data do voo</div>
+          <div class="value">{{ summary.data_viagem|default:"Data a confirmar" }}</div>
+        </div>
+        <div>
+          <div class="label">Localizador do voo</div>
+          <div class="value">{{ summary.codigo }}</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="label">Assentos selecionados ({{ summary.pax_total }})</div>
+        <div class="seats">
+          {% for seat in summary.assentos %}
+            <span class="chip">{{ seat }}</span>
+          {% empty %}
+            <span class="chip">Nenhum</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div style="margin-top:20px; background:#f8fbff; border:1px solid #dee7f4; border-radius:16px; padding:18px;">
+        <div class="label">Resumo financeiro</div>
+        <div class="row" style="display:flex; justify-content:space-between; font-weight:600;">
+          <span>Tarifa base</span>
+          <span>{{ summary.tarifa_fmt }}</span>
+        </div>
+        {% if summary.has_premium %}
+          <div class="row" style="display:flex; justify-content:space-between; font-weight:600; margin-top:6px;">
+            <span>Assentos premium ({{ summary.premium_count }})</span>
+            <span>{{ summary.premium_total_fmt }}</span>
+          </div>
+        {% endif %}
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+        <div>
+          <div class="label">Método de pagamento</div>
+          <div class="payment-options">
+            {% for option in payment_methods %}
+              <label class="payment-option">
+                <input type="radio" name="metodo_pagamento" value="{{ option.key }}" {% if summary.metodo_pagamento == option.key %}checked{% elif not summary.metodo_pagamento and forloop.first %}checked{% endif %} />
+                <div>
+                  <div class="value">{{ option.title }}</div>
+                  <p>{{ option.description }}</p>
+                </div>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="total">Total estimado: {{ total_estimado }}</div>
+        <input type="hidden" name="origem" value="{{ summary.origem }}" />
+        <input type="hidden" name="destino" value="{{ summary.destino }}" />
+        <input type="hidden" name="segmento" value="{{ summary.segmento }}" />
+        <input type="hidden" name="data" value="{{ summary.data_viagem }}" />
+        <input type="hidden" name="codigo" value="{{ summary.codigo }}" />
+        <input type="hidden" name="pax" value="{{ summary.pax_total }}" />
+        <input type="hidden" name="tarifa" value="{{ summary.tarifa_fmt }}" />
+        <input type="hidden" name="assentos" value="{{ summary.assentos|join:"," }}" />
+        <input type="hidden" name="premium_count" value="{{ summary.premium_count }}" />
+        <div class="actions">
+          <button type="submit" class="btn btn-primary">Avançar para pagamento</button>
+          <a class="btn btn-ghost" href="{{ back_url }}">Voltar</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

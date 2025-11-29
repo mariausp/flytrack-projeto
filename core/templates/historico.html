@@ -1,0 +1,280 @@
+{% load static %}
+
+<!doctype html>
+<html lang="pt-BR" data-page="historico">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Histórico de Viagens — Fly Track</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="{% static 'core/img/favicon.png' %}">
+  <link rel="shortcut icon" href="{% static 'core/img/favicon.png' %}">
+
+  <style>
+    :root{
+      --bg:#edf6fb; --card:#fff; --ink:#0b1e45; --muted:#3a5674; --line:#e5eef6;
+      --cta:#ff5a00; --cta-ink:#fff; --accent:#2f80ed;
+      --ok:#1e9e56; --warn:#e58a00; --bad:#b00020; --chip:#eef6ff;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+    .wrap{max-width:1260px;margin:28px auto;padding:0 18px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:28px;box-shadow:0 12px 30px rgba(13,35,60,.06);padding:22px}
+
+    .nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    .brand{font-weight:800;letter-spacing:.2px}
+    .nav ul{display:flex;gap:22px;list-style:none;margin:0;padding:0}
+    .nav a{text-decoration:none;color:var(--ink);font-weight:600}
+    .pill{background:#f1f6fb;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px;text-decoration:none;color:#183352}
+    .login{background:#ff8a50;color:#fff;font-weight:700;padding:10px 20px;border-radius:999px;text-decoration:none;border:2px solid #ffd8c3}
+
+    h1{margin:6px 0 12px;font-size:32px}
+    .muted{color:var(--muted)}
+
+    /* filtros */
+    .filters{display:grid;grid-template-columns:2fr 1.2fr 1.2fr 1.2fr .9fr;gap:12px;align-items:end;margin:12px 0 8px}
+    .field{display:flex;flex-direction:column;gap:6px}
+    .field label{font-size:12px;color:#0b3b74;font-weight:700}
+    .field input,.field select{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;color:var(--ink)}
+    .btn{background:var(--cta);color:var(--cta-ink);font-weight:800;border:0;border-radius:12px;padding:12px 16px;cursor:pointer}
+
+    .toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:8px 0 2px}
+    .toggle-view{display:flex;gap:8px}
+    .toggle-view button{padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;font-weight:700;cursor:pointer;font-size:13px}
+    .toggle-view .is-active{outline:3px solid #cfe6fb}
+
+    /* tabela */
+    .table-wrap{max-height:65vh;overflow:auto;border:1px solid var(--line);border-radius:18px}
+    table.table{width:100%;border-collapse:separate;border-spacing:0}
+    .table th,.table td{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:14px}
+    .table th{position:sticky;top:0;background:#f7fbff;z-index:1;color:#0b3b74;font-weight:800;letter-spacing:.2px}
+    .table tbody tr{transition:background .18s ease}
+    .table tbody tr:hover{background:#f9fcff}
+    .table td .muted{font-size:12px}
+
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-weight:800;line-height:1;border:1px solid var(--line);background:var(--chip);font-size:12px;box-shadow:0 1px 0 rgba(0,0,0,.04) inset}
+    .b-ok{background:#e9fbef;color:#0e7b3b;border-color:#bdeccf}
+    .b-warn{background:#fff6e6;color:#8a5600;border-color:#ffe0b3}
+    .b-bad{background:#ffe8ec;color:#7a0014;border-color:#ffc2ce}
+
+    .btn-ghost{background:#fff;border:1px solid var(--line);color:#183352;border-radius:999px;padding:9px 12px;font-weight:700;cursor:pointer;font-size:13px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
+    .empty{border:1px dashed var(--line);background:#f8fbff;border-radius:16px;padding:16px;text-align:center;color:#456;margin-top:10px}
+
+    /* cartões */
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+    @media (max-width:1100px){ .grid{grid-template-columns:repeat(2,1fr)} .filters{grid-template-columns:1fr 1fr 1fr 1fr .9fr} }
+    @media (max-width:760px){
+      .grid{grid-template-columns:1fr}
+      .filters{grid-template-columns:1fr 1fr;gap:10px}
+      .toolbar{flex-direction:column;align-items:stretch}
+    }
+    .trip-card{border:1px solid var(--line);border-radius:16px;padding:14px;background:#fff;display:grid;gap:8px;transition:transform .08s ease, box-shadow .18s ease}
+    .trip-card:hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(13,35,60,.07)}
+    .trip-head{display:flex;justify-content:space-between;align-items:center}
+    .trip-route{font-size:16px;font-weight:800}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+    /* paginação */
+    .pager{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:12px}
+    .pager a{color:var(--accent);text-decoration:none;font-weight:700}
+  </style>
+</head>
+<body>
+
+  <div class="wrap">
+    <div class="card">
+
+      <nav class="nav" aria-label="primária">
+        <div class="brand">Fly Track</div>
+        <ul>
+          <li><a href="{% url 'core:home' %}">Início</a></li>
+          <li><a href="{% url 'core:historico' %}">Histórico de Viagens</a></li>
+          <li><a href="{% url 'core:contato' %}">Contato</a></li>
+
+          {% if request.user.is_authenticated %}
+            <li><span class="pill">Olá, {{ request.user.get_full_name|default:request.user.username }}</span></li>
+            <li><a class="pill" href="{% url 'core:logout' %}">Sair</a></li>
+          {% else %}
+            <li><a class="login" href="{% url 'core:login' %}?next={{ request.path|urlencode }}">Entrar</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+
+      <header>
+        <h1>Histórico de Viagens</h1>
+        <p class="muted">
+          {% if total %}Total: {{ total }}{% else %}Consulte passagens já compradas e pagamentos em processamento.{% endif %}
+        </p>
+      </header>
+
+      {# === FILTROS (funcionando via GET) === #}
+      <form class="filters" aria-label="Filtros de busca" method="get">
+        <div class="field">
+          <label for="q">Buscar</label>
+          <input id="q" name="q" placeholder="Ex.: Destino, origem ou localizador"
+                 value="{{ request.GET.q|default_if_none:'' }}">
+        </div>
+        <div class="field">
+          <label for="from">Data de Ida (de)</label>
+          <input id="from" name="from" type="date" value="{{ request.GET.from|default_if_none:'' }}">
+        </div>
+        <div class="field">
+          <label for="to">Data de Ida (até)</label>
+          <input id="to" name="to" type="date" value="{{ request.GET.to|default_if_none:'' }}">
+        </div>
+        <div class="field">
+          <label for="status">Status</label>
+          <select id="status" name="status">
+            {% with s=request.GET.status %}
+              <option value="" {% if not s %}selected{% endif %}>Todos</option>
+              <option value="PAGO" {% if s == 'PAGO' %}selected{% endif %}>Pago</option>
+              <option value="PENDENTE" {% if s == 'PENDENTE' %}selected{% endif %}>Pendente</option>
+              <option value="CANCELADO" {% if s == 'CANCELADO' %}selected{% endif %}>Cancelado</option>
+            {% endwith %}
+          </select>
+        </div>
+        <div class="field">
+          <button class="btn" type="submit">Filtrar</button>
+        </div>
+      </form>
+
+      <div class="toolbar">
+        <div class="muted">
+          {% if total %}
+            {{ total }} viagem{{ total|pluralize:"s" }} encontrada{{ total|pluralize:"s" }}
+          {% else %}
+            0 viagens encontradas
+          {% endif %}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="toggle-view" role="tablist" aria-label="Modo de exibição">
+            <button id="btnTable" class="is-active" role="tab" aria-selected="true" type="button">Tabela</button>
+            <button id="btnCards" role="tab" aria-selected="false" type="button">Cartões</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABELA -->
+      <div id="modeTable" class="table-wrap" {% if not tickets %}style="display:none"{% endif %}>
+        {% if tickets %}
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Localizador</th>
+                <th>Rota</th>
+                <th>Datas</th>
+                <th>Preço</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in tickets %}
+                <tr>
+                  <td><strong>{{ t.codigo }}</strong></td>
+                  <td><div style="font-weight:800">{{ t.origem }} → {{ t.destino }}</div></td>
+                  <td>
+                    <div style="font-weight:800">{{ t.origem }} → {{ t.destino }}</div>
+                    {% if t.assentos %}<div class="muted">Assentos: {{ t.assentos }}</div>{% endif %}
+                  </td>
+                  <td>
+                    <div><b>Partida:</b> {{ t.partida|date:"d/m/Y H:i" }}</div>
+                    {% if t.chegada %}<div><b>Chegada:</b> {{ t.chegada|date:"d/m/Y H:i" }}</div>{% endif %}
+                  </td>
+                  <td>R$ {{ t.preco }}</td>
+                  <td>
+                    {% if t.status == "PAGO" %}
+                      <span class="badge b-ok">Pago</span>
+                    {% elif t.status == "PENDENTE" %}
+                      <span class="badge b-warn">Pendente</span>
+                    {% elif t.status == "CANCELADO" %}
+                      <span class="badge b-bad">Cancelado</span>
+                    {% else %}
+                      <span class="badge">{{ t.get_status_display|default:t.status }}</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
+      </div>
+
+      {% if not tickets %}
+        <div id="emptyTable" class="empty">Nenhuma viagem encontrada.</div>
+      {% endif %}
+
+      <!-- CARTÕES -->
+      <div id="modeCards" {% if tickets %}style="display:none"{% endif %}>
+        {% if tickets %}
+          <div class="grid">
+            {% for t in tickets %}
+              <article class="trip-card">
+                <div class="trip-head">
+                  <div class="trip-route">{{ t.origem }} → {{ t.destino }}</div>
+                  <div>
+                    {% if t.status == "PAGO" %}
+                      <span class="badge b-ok">Pago</span>
+                    {% elif t.status == "PENDENTE" %}
+                      <span class="badge b-warn">Pendente</span>
+                    {% elif t.status == "CANCELADO" %}
+                      <span class="badge b-bad">Cancelado</span>
+                    {% else %}
+                      <span class="badge">{{ t.get_status_display|default:t.status }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <div><span class="pill">{{ t.codigo }}</span></div>
+                {% if t.assentos %}<div class="muted">Assentos: {{ t.assentos }}</div>{% endif %}
+                <div><b>Partida:</b> {{ t.partida|date:"d/m/Y H:i" }}{% if t.chegada %} · <b>Chegada:</b> {{ t.chegada|date:"d/m/Y H:i" }}{% endif %}</div>
+                <div><b>Preço:</b> R$ {{ t.preco }}</div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div id="emptyCards" class="empty">Nenhuma viagem encontrada.</div>
+        {% endif %}
+      </div>
+
+      {# Paginação preservando filtros #}
+      {% if page_obj %}
+        {% with request.GET.urlencode as qstr %}
+        <nav class="pager" aria-label="Paginação">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if qstr %}&{{ qstr }}{% endif %}">« Anterior</a>
+          {% endif %}
+          <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if qstr %}&{{ qstr }}{% endif %}">Próxima »</a>
+          {% endif %}
+        </nav>
+        {% endwith %}
+      {% endif %}
+
+    </div>
+  </div>
+
+  <script>
+    // Toggle entre Tabela e Cartões
+    const btnTable = document.getElementById('btnTable');
+    const btnCards = document.getElementById('btnCards');
+    const modeTable = document.getElementById('modeTable');
+    const modeCards = document.getElementById('modeCards');
+
+    function setView(mode){
+      const isTable = mode === 'table';
+      btnTable.classList.toggle('is-active', isTable);
+      btnCards.classList.toggle('is-active', !isTable);
+      btnTable.setAttribute('aria-selected', String(isTable));
+      btnCards.setAttribute('aria-selected', String(!isTable));
+      modeTable.style.display = isTable ? '' : 'none';
+      modeCards.style.display = isTable ? 'none' : '';
+    }
+
+    btnTable?.addEventListener('click', ()=> setView('table'));
+    btnCards?.addEventListener('click', ()=> setView('cards'));
+  </script>
+</body>
+</html>

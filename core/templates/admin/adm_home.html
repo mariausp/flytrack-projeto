@@ -1,0 +1,44 @@
+{% extends "admin/base.html" %}
+
+{% block main_content %}
+  <h2>Cadastrar Voo</h2>
+  <form method="post" action="{% url 'core:voo_cadastrar' %}">
+    {% csrf_token %}
+    <div>
+      <label>Número do Voo</label>
+      <input type="text" name="numero_voo" placeholder="Ex: FT123">
+    </div>
+    <div>
+      <label>Origem</label>
+      <select name="origem">
+        <option value="">Selecione</option>
+        <option>GRU</option><option>CGH</option><option>BSB</option><option>REC</option>
+      </select>
+    </div>
+    <div>
+      <label>Destino</label>
+      <select name="destino">
+        <option value="">Selecione</option>
+        <option>GRU</option><option>CGH</option><option>BSB</option><option>REC</option>
+      </select>
+    </div>
+    <div>
+      <label>Data</label>
+      <input type="date" name="data">
+    </div>
+    <div>
+      <label>Horário de Partida</label>
+      <input type="time" name="horario">
+    </div>
+    <div>
+      <label>Capacidade de Assentos</label>
+      <input type="number" name="capacidade" placeholder="Ex: 180">
+    </div>
+    <div>
+      <label>Aeronave</label>
+      <input type="text" name="aeronave" placeholder="Ex: Airbus A320">
+    </div>
+    <button type="submit" class="primary-btn">Salvar</button>
+    {% if sucesso %}<p class="success">✔ Voo cadastrado com sucesso</p>{% endif %}
+  </form>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{% block title %}Fly Track — Autenticação{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body>
+  <main class="frame" role="main">
+    <section class="left" aria-hidden="true">
+      <div class="brand"><span class="brand-icon">✈</span> Fly Track</div>
+      <div class="art"><img src="{% static 'img/minha-ilustracao.png' %}" alt=""></div>
+      <div class="footer-links"><a href="#">Política de Privacidade</a><a href="#">Termos</a></div>
+    </section>
+
+    <section class="right">
+      <form class="card" method="post" novalidate>
+        {% csrf_token %}
+        <h1>{% block heading %}{% endblock %}</h1>
+        <p class="sub">{% block sub %}{% endblock %}</p>
+
+        {% block form_fields %}{% endblock %}
+
+        {% block extra %}{% endblock %}
+      </form>
+    </section>
+  </main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

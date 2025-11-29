@@ -1,0 +1,878 @@
+{% load static %}
+
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Resultados — Fly Track</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="{% static 'core/img/favicon.png' %}">
+<link rel="shortcut icon" href="{% static 'core/img/favicon.png' %}">
+<style>
+  :root{
+    --bg:#eaf2f7; --card:#fff; --ink:#0b1e45; --muted:#3a5674; --line:#dfeaf3;
+    --primary:#1677c6; --primary-ink:#fff; --accent:#ff5a00; --accent-ink:#fff;
+    --chip:#eef6ff; --ok:#2ecc71;
+  }
+  *{box-sizing:border-box}
+  async function consultarTarifas(){
+    if (!apiStatusEl) return;
+    apiStatusEl.textContent = 'Consultando tarifas em tempo real…';
+    apiStatusEl.classList.remove('is-error','is-ok');
+    const params = new URLSearchParams({
+      origem,
+      destino,
+      pax: String(getTotalPax()),
+    });
+    if (idaISO) params.set('data', idaISO);
+
+    try {
+      const response = await fetch(`/api/voos/?${params.toString()}`, {
+        headers: { 'Accept': 'application/json' },
+        credentials: 'same-origin',
+      });
+
+      if (response.status === 403) {
+        throw new Error('Faça login para consultar tarifas personalizadas.');
+      }
+      if (!response.ok) {
+        throw new Error(`Erro ao consultar a API (HTTP ${response.status}).`);
+      }
+
+      const payload = await response.json();
+      const recomendado = payload.recomendado || {};
+      const barato = payload.mais_barato || {};
+
+      if (precoRecomendadoEl) precoRecomendadoEl.textContent = recomendado.preco_fmt || 'R$ -';
+      if (precoMaisBaratoEl) precoMaisBaratoEl.textContent = barato.preco_fmt || 'R$ -';
+      if (precoMaisBaratoResumoEl) {
+        const descricao = barato.descricao ? ` · ${barato.descricao}` : '';
+        precoMaisBaratoResumoEl.textContent = (barato.preco_fmt || 'R$ -') + descricao;
+      }
+
+      const origemDesc = payload.parametros?.origem || origem || 'origem';
+      const destinoDesc = payload.parametros?.destino || destino || 'destino';
+      apiStatusEl.textContent = `Tarifas calculadas para ${origemDesc} → ${destinoDesc}.`;
+      apiStatusEl.classList.add('is-ok');
+    } catch (err) {
+      if (precoRecomendadoEl) precoRecomendadoEl.textContent = 'R$ -';
+      if (precoMaisBaratoEl) precoMaisBaratoEl.textContent = 'R$ -';
+      if (precoMaisBaratoResumoEl) precoMaisBaratoResumoEl.textContent = 'R$ -';
+      apiStatusEl.textContent = err.message || 'Não foi possível consultar a API.';
+      apiStatusEl.classList.add('is-error');
+    }
+  }
+
+  scheduleAPIUpdate();
+
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  .wrap{max-width:1260px;margin:28px auto;padding:0 18px}
+
+  /* layout */
+  .grid{display:grid;grid-template-columns:340px 1fr;gap:22px}
+  @media (max-width:1000px){ .grid{grid-template-columns:1fr} }
+
+  /* painel lateral */
+  .panel{
+    background:#0c6aa9; color:#eaf6ff; border-radius:22px; padding:22px;
+    border:1px solid rgba(255,255,255,.25);
+    box-shadow:0 16px 40px rgba(12,106,169,.18);
+  }
+  .panel h2{margin:0 0 16px 0; font-size:26px}
+  .seg{display:flex;gap:10px;margin:12px 0 18px}
+  .seg button{
+    border:1px solid rgba(255,255,255,.35); background:transparent; color:#eaf6ff;
+    padding:8px 12px; border-radius:999px; cursor:pointer; font-weight:700;
+  }
+  .seg button.is-active{background:#0aa1ff;border-color:#70d3ff}
+  .field{
+    background:#e8f4ff; color:#0a2d4e; border:2px solid #cfe6fb; border-radius:14px;
+    padding:12px 14px; margin:10px 0; font-weight:700; box-shadow: inset 0 2px 0 rgba(255,255,255,.6);
+  }
+  .field small{display:block;color:#0a2d4e;font-weight:600;opacity:.85;margin-bottom:6px}
+  .swap{float:right; background:#0aa1ff; color:#003253; border-radius:999px; border:0; width:36px; height:36px;
+        display:inline-flex; align-items:center; justify-content:center; cursor:pointer; margin-left:6px}
+  .toggle{
+    display:flex; align-items:center; gap:10px; color:#eaf6ff; margin:16px 0 6px;
+  }
+  .switch{
+    width:46px;height:26px;background:#f6a57f;border-radius:999px;border:2px solid #ffd7c5;position:relative;cursor:pointer;
+  }
+  .switch::after{
+    content:""; position:absolute; left:4px; top:50%; transform:translateY(-50%);
+    width:18px; height:18px; border-radius:50%; background:#fff; transition:.2s;
+  }
+  .switch.is-on{background:#ff5a00}
+  .switch.is-on::after{left:22px}
+
+  .panel .btn{
+    width:100%; margin-top:14px; display:flex; align-items:center; justify-content:center;
+    gap:10px; background:var(--accent); color:var(--accent-ink); border:0; border-radius:18px;
+    padding:16px 20px; font-size:20px; font-weight:800; cursor:pointer;
+    box-shadow:0 12px 26px rgba(255,90,0,.25);
+  }
+
+  /* === Caixinhas de data viram botões clicáveis === */
+  .pill-date{
+    position:relative;
+    background:#e8f4ff; color:#0a2d4e; border:2px solid #cfe6fb; border-radius:14px;
+    padding:10px 12px 12px; font-weight:700; box-shadow: inset 0 2px 0 rgba(255,255,255,.6);
+    min-height:68px; cursor:pointer; user-select:none;
+  }
+  .pill-date small{display:block;color:#0a2d4e;font-weight:600;opacity:.85;margin-bottom:6px}
+  .pill-date strong{display:block;font-weight:800}
+  .pill-date:focus-visible{ outline:3px solid #bfe0ff; outline-offset:2px; }
+  .pill-head{ font-weight:700; opacity:.85; margin-bottom:6px; }
+  .pill-value{ font-weight:800; }
+
+  /* input date invisível sobre a pílula */
+  .pill-date__input{
+    position:absolute; inset:0; width:100%; height:100%;
+    opacity:0; pointer-events:none;
+  }
+
+  /* pílula desabilitada (modo Só ida) */
+  .pill-date.is-disabled{
+    opacity:.55; filter:saturate(.6); cursor:not-allowed;
+  }
+
+  /* topo resultados */
+  .top{
+    background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px;
+  }
+
+  /* cards de voos */
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px;
+    display:grid; grid-template-columns:72px 1fr 1fr auto; align-items:center; gap:12px; margin-top:14px;
+  }
+  @media (max-width:900px){
+    .card{grid-template-columns:1fr; grid-auto-rows:auto}
+    .card .price-col, .card .chunk, .card > div:nth-child(3){ text-align:left }
+  }
+  .plane-ico{font-size:34px}
+  .chunk h3{margin:0 0 2px 0; font-size:22px; letter-spacing:.2px}
+  .sub{color:var(--muted); font-weight:600}
+  .big{font-size:20px; font-weight:800; text-align:left}
+  /* price area: align to right and stack price then actions to avoid overlap */
+  .price-col{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:140px}
+  .price-col .price{font-size:22px; font-weight:900}
+  .btn-seat{border:0; background:#106fb6; color:#fff; font-weight:800; padding:9px 14px; border-radius:999px; cursor:pointer; display:inline-block}
+  .buy{border:0; background:#ff8a50; color:#fff; font-weight:900; padding:10px 14px; border-radius:999px; cursor:pointer}
+
+  /* ensure the divider and footnotes span full width on small screens */
+  .bar{grid-column:1/-1}
+
+  /* Prevent overlap: ensure price column stacks below summary on small screens and buttons flow */
+  .price-col{position:relative}
+  .btn-seat{z-index:2;margin-top:6px}
+
+  @media (max-width:900px){
+    /* switch card to vertical flow on small screens to avoid overlapping elements */
+    .card{display:flex;flex-direction:column;align-items:stretch;padding:14px}
+    .card > .plane-ico{order:0}
+    .card > .chunk{order:1}
+    .card > div:nth-child(3){order:2}
+    .card > div:nth-child(4){order:3}
+    .card .price-col{order:4;display:flex;flex-direction:row;justify-content:space-between;align-items:center;padding-top:8px}
+    .card .price-col .price{font-size:20px}
+    .btn-seat{margin:0;align-self:flex-start}
+    .buy{align-self:flex-end}
+  }
+
+  .bar{height:1px;background:var(--line);margin:12px 0}
+  .muted{color:var(--muted)}
+
+
+    /* === Passsageiros & Classe - popover === */
+  .pax-wrap{ position:relative; }
+  .pax-pop{
+    position:absolute; top:100%; left:0; margin-top:8px; width:320px;
+    background:#fff; color:var(--ink);
+    border:1px solid var(--line); border-radius:14px; padding:14px;
+    box-shadow:0 16px 32px rgba(10,35,60,.18); z-index:60; display:none;
+  }
+  .pax-pop.is-open{ display:block; }
+  .pax-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; }
+  .pax-row .lbl{ font-weight:700; }
+  .stepper{ display:flex; align-items:center; gap:10px; }
+  .stepper button{
+    width:32px; height:32px; border-radius:10px; border:1px solid var(--line);
+    background:#f4f8fc; cursor:pointer; font-weight:800;
+  }
+  .stepper .num{ min-width:22px; text-align:center; font-weight:800; }
+  .pax-pop hr{ border:0; height:1px; background:var(--line); margin:12px 0; }
+  .cabins{ display:grid; grid-template-columns:1fr; gap:8px; }
+  .cabins label{ display:flex; align-items:center; gap:10px; padding:8px; border:1px solid var(--line); border-radius:10px; }
+  .pax-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
+  .pax-actions .btn-ghost{
+    background:transparent; border:1px solid var(--line); border-radius:10px; padding:8px 12px; cursor:pointer;
+  }
+  .pax-actions .btn-apply{
+    background:var(--accent); color:#fff; border:0; border-radius:10px; padding:8px 14px; cursor:pointer; font-weight:800;
+  }
+
+  /* deixa o campo parecer clicável */
+  #paxField{ cursor:pointer; user-select:none; }
+  #paxField:focus-visible{ outline:3px solid #bfe0ff; outline-offset:2px; }
+
+  .api-status{
+    margin:16px 0;
+    padding:14px 18px;
+    border-radius:14px;
+    border:1px solid #cfe0ef;
+    background:#eef6ff;
+    color:#0a2d4e;
+    font-weight:600;
+  }
+  .api-status.is-error{background:#ffecec;border-color:#ffb3b3;color:#b02727;}
+  .api-status.is-ok{background:#e9fbef;border-color:#aeefc4;color:#0e7b3b;}
+
+  .results-grid{
+    margin-top:26px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+    gap:18px;
+  }
+  .result-card{
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:18px;
+    background:var(--card);
+    box-shadow:0 12px 24px rgba(11,30,69,.08);
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .result-card header{display:flex;justify-content:space-between;align-items:center;font-weight:700;}
+  .result-card .airline{color:var(--muted); font-weight:600;}
+  .result-card .schedule{font-size:18px;font-weight:800;}
+  .result-card .supplement{color:var(--muted);font-size:14px;}
+  .result-card .price{font-size:28px;font-weight:900;}
+  .result-card footer{display:flex;justify-content:space-between;align-items:center;}
+  .btn-select{
+    border:0; border-radius:12px; background:var(--primary); color:#fff;
+    padding:10px 16px; font-weight:700; cursor:pointer;
+  }
+
+
+</style>
+</head>
+<body>
+{% url 'core:selecionar_assento' as selecionar_assento_url %}
+<div class="wrap grid">
+
+  <!-- LATERAL -->
+  <aside class="panel">
+    <h2>Passagens Aéreas</h2>
+    <div class="seg">
+      <button id="btnRT" class="is-active" type="button">Ida e Volta</button>
+      <button id="btnOW" type="button">Só ida</button>
+    </div>
+
+    <div class="field" id="f-origem">
+      <small>Origem</small>
+      <div><span id="origemTxt">—</span>
+        <button class="swap" title="Inverter" id="swapBtn">↕</button>
+      </div>
+    </div>
+
+    <div class="field" id="f-destino">
+      <small>Destino</small>
+      <div id="destinoTxt">—</div>
+    </div>
+
+    <!-- Caixinhas de data (botões) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <!-- IDA -->
+      <div class="pill-date" id="boxIda" role="button" aria-label="Selecionar data de ida" tabindex="0">
+        <div class="pill-head">Ida</div>
+        <div class="pill-value" id="idaTxt">—</div>
+        <input id="inpIda" class="pill-date__input" type="date" />
+      </div>
+
+      <!-- VOLTA -->
+      <div class="pill-date" id="boxVolta" role="button" aria-label="Selecionar data de volta" tabindex="0">
+        <div class="pill-head">Volta</div>
+        <div class="pill-value" id="voltaTxt">—</div>
+        <input id="inpVolta" class="pill-date__input" type="date" />
+      </div>
+    </div>
+
+    <div class="toggle">
+      <div class="switch is-on"></div>
+      <div>Buscar pelo mais barato</div>
+    </div>
+
+  <div class="pax-wrap">
+    <div class="field" id="paxField" role="button" tabindex="0" aria-haspopup="dialog" aria-expanded="false">
+      <small>Passageiros e Classe</small>
+      <div id="paxSummary">1 pessoa · Econômica</div>
+    </div>
+
+    <div class="pax-pop" id="paxPop" role="dialog" aria-label="Selecionar passageiros e classe">
+      <div class="pax-row">
+        <div class="lbl">Adultos</div>
+        <div class="stepper">
+          <button type="button" id="adMenos">−</button>
+          <span class="num" id="adNum">1</span>
+          <button type="button" id="adMais">+</button>
+        </div>
+      </div>
+      <div class="pax-row">
+        <div class="lbl">Idosos</div>
+        <div class="stepper">
+          <button type="button" id="idMenos">−</button>
+          <span class="num" id="idNum">0</span>
+          <button type="button" id="idMais">+</button>
+        </div>
+      </div>
+      <div class="pax-row">
+        <div class="lbl">Crianças</div>
+        <div class="stepper">
+          <button type="button" id="chMenos">−</button>
+          <span class="num" id="chNum">0</span>
+          <button type="button" id="chMais">+</button>
+        </div>
+      </div>
+
+    <hr>
+    <div class="cabins">
+      <label><input type="radio" name="cabin" value="Econômica" checked> Econômica</label>
+      <label><input type="radio" name="cabin" value="Executiva"> Executiva</label>
+      <label><input type="radio" name="cabin" value="Primeira Classe"> Primeira Classe</label>
+    </div>
+
+    <div class="pax-actions">
+      <button type="button" class="btn-ghost" id="paxCancel">Cancelar</button>
+      <button type="button" class="btn-apply" id="paxApply">Aplicar</button>
+    </div>
+  </div>
+</div>
+
+
+    <button class="btn" id="refazerBusca">🔎 Buscar</button>
+  </aside>
+
+  <!-- CONTEÚDO -->
+  <main>
+    <div class="top">
+      <div class="muted" id="titulos">Voos ida e volta</div>
+    </div>
+
+    <div id="apiStatus" class="api-status" role="status">Carregando tarifas em tempo real…</div>
+
+    <!-- CARD 1 - IDA -->
+    <article class="card">
+      <div class="plane-ico">✈️</div>
+      <div class="chunk">
+        <h3>IDA</h3>
+        <div class="sub" id="idaSub">—</div>
+      </div>
+      <div>
+        <div class="big" id="origemCode">GRU</div>
+        <div class="sub" id="origemCity">São Paulo</div>
+      </div>
+      <div>
+        <div class="big" id="destinoCode">EWR</div>
+        <div class="sub" id="destinoCity">New York</div>
+      </div>
+      <div class="price-col">
+        <div class="price" id="precoRecomendado">R$ -</div>
+        <a class="btn-seat" href="{{ selecionar_assento_url }}?segmento=ida{% if default_origem %}&origem={{ default_origem|urlencode }}{% endif %}{% if default_destino %}&destino={{ default_destino|urlencode }}{% endif %}{% if default_data %}&data={{ default_data|urlencode }}{% endif %}{% if default_pax %}&pax={{ default_pax|urlencode }}{% endif %}" data-segment="ida" data-codigo="FT230">Assento</a>
+      </div>
+      <div class="bar" style="grid-column:1/-1"></div>
+      <div class="muted" style="grid-column:1/-1">1 Adulto · Impostos, taxas e encargos</div>
+    </article>
+
+    <!-- CARD 2 - VOLTA -->
+    <article class="card" id="cardVolta">
+      <div class="plane-ico">✈️</div>
+      <div class="chunk">
+        <h3>VOLTA</h3>
+        <div class="sub" id="voltaSub">—</div>
+      </div>
+      <div>
+        <div class="big" id="origemCode2">GRU</div>
+        <div class="sub" id="origemCity2">São Paulo</div>
+      </div>
+      <div>
+        <div class="big" id="destinoCode2">EWR</div>
+        <div class="sub" id="destinoCity2">New York</div>
+      </div>
+      <div class="price-col">
+        <div class="muted" id="precoMaisBarato">R$ -</div>
+        <a class="btn-seat" href="{{ selecionar_assento_url }}?segmento=volta{% if default_destino %}&origem={{ default_destino|urlencode }}{% endif %}{% if default_origem %}&destino={{ default_origem|urlencode }}{% endif %}{% if default_volta %}&data={{ default_volta|urlencode }}{% endif %}{% if default_pax %}&pax={{ default_pax|urlencode }}{% endif %}" data-segment="volta" data-codigo="FT231">Assento</a>
+      </div>
+      <div style="grid-column:1/-1; display:flex; justify-content:flex-end; gap:16px; align-items:center; margin-top:4px">
+        <div class="muted" id="precoMaisBaratoResumo">R$ -</div>
+        <a class="buy" href="{{ selecionar_assento_url }}?segmento=volta{% if default_destino %}&origem={{ default_destino|urlencode }}{% endif %}{% if default_origem %}&destino={{ default_origem|urlencode }}{% endif %}{% if default_volta %}&data={{ default_volta|urlencode }}{% endif %}{% if default_pax %}&pax={{ default_pax|urlencode }}{% endif %}" data-segment="volta" data-codigo="FT231">Comprar</a>
+      </div>
+    </article>
+
+      <section id="dynamicResults" class="results-grid" aria-live="polite"></section>
+
+  </main>
+</div>
+
+<script>
+  // ---------- utils ----------
+  const url = new URLSearchParams(location.search);
+  const getQS = (k, def="") => url.get(k) ?? def;
+
+  function fmtDataISO(iso){
+    if(!iso) return "—";
+    const d = new Date(iso + "T12:00:00");
+    return d.toLocaleDateString("pt-BR", {
+      weekday:"short", day:"2-digit", month:"short", year:"numeric"
+    }).replace(/\.$/,"");
+  }
+  function cidadeSemPais(txt){
+    return (txt||"").replace(/\s*-\s*[A-Z]{2,}.*$/,"");
+  }
+  function guessIATA(txt){
+    txt = (txt||"").toLowerCase();
+    if (txt.includes("são paulo")||txt.includes("sao paulo")) return "GRU";
+    if (txt.includes("rio de janeiro")) return "GIG";
+    if (txt.includes("new york")||txt.includes("nova iorque")) return "EWR";
+    if (txt.includes("brasília")||txt.includes("brasilia")) return "BSB";
+    return "XXX";
+  }
+  const todayISO = (()=>{ const d=new Date(), p=n=>String(n).padStart(2,'0');
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`; })();
+
+  // ---------- estado vindo da página anterior ----------
+  let origem   = getQS("origem","São Paulo, SP - BR");
+  let destino  = getQS("destino","New York, NY - USA");
+  let idaISO   = getQS("data","");      // ida
+  let voltaISO = getQS("volta","");     // volta (se houver)
+  let modo     = getQS("modo","rt");    // 'rt' ida e volta | 'ow' só ida
+
+  // ---------- refs DOM ----------
+  const origemTxt = document.getElementById("origemTxt");
+  const destinoTxt= document.getElementById("destinoTxt");
+  const boxIda    = document.getElementById("boxIda");
+  const boxVolta  = document.getElementById("boxVolta");
+  const inpIda    = document.getElementById("inpIda");
+  const inpVolta  = document.getElementById("inpVolta");
+  const idaTxt    = document.getElementById("idaTxt");
+  const voltaTxt  = document.getElementById("voltaTxt");
+  const titulos   = document.getElementById("titulos");
+  const cardVolta = document.getElementById("cardVolta");
+  const btnRT     = document.getElementById("btnRT");
+  const btnOW     = document.getElementById("btnOW");
+  const apiStatusEl = document.getElementById("apiStatus");
+  const precoRecomendadoEl = document.getElementById("precoRecomendado");
+  const precoMaisBaratoEl = document.getElementById("precoMaisBarato");
+  const precoMaisBaratoResumoEl = document.getElementById("precoMaisBaratoResumo");
+  const dynamicResultsEl = document.getElementById("dynamicResults");
+
+  // ---------- preenche painel ----------
+  origemTxt.textContent  = origem;
+  destinoTxt.textContent = destino;
+  inpIda.min = todayISO;
+  inpVolta.min = todayISO;
+
+  if (idaISO){ inpIda.value = idaISO; idaTxt.textContent = fmtDataISO(idaISO); inpVolta.min = idaISO; }
+  if (voltaISO){ inpVolta.value = voltaISO; voltaTxt.textContent = fmtDataISO(voltaISO); }
+
+  // ---------- cards ----------
+  function atualizaCards(){
+    const oCity = cidadeSemPais(origem).split(",")[0] || "—";
+    const dCity = cidadeSemPais(destino).split(",")[0] || "—";
+    const oIATA = guessIATA(origem);
+    const dIATA = guessIATA(destino);
+
+    document.getElementById("idaSub").textContent       = idaISO ? fmtDataISO(idaISO) : "—";
+    document.getElementById("origemCode").textContent   = oIATA;
+    document.getElementById("origemCity").textContent   = oCity;
+    document.getElementById("destinoCode").textContent  = dIATA;
+    document.getElementById("destinoCity").textContent  = dCity;
+
+    document.getElementById("voltaSub").textContent     = voltaISO ? fmtDataISO(voltaISO) : "—";
+    document.getElementById("origemCode2").textContent  = oIATA;
+    document.getElementById("origemCity2").textContent  = oCity;
+    document.getElementById("destinoCode2").textContent = dIATA;
+    document.getElementById("destinoCity2").textContent = dCity;
+  }
+  atualizaCards();
+
+  // ---------- abrir datepicker ----------
+  function openPicker(inputEl){
+    if (!inputEl) return;
+    if (typeof inputEl.showPicker === "function"){
+      try { inputEl.showPicker(); return; } catch(_) {}
+    }
+    inputEl.focus();
+    try { inputEl.click(); } catch(_) {}
+    setTimeout(()=> {
+      inputEl.dispatchEvent(new KeyboardEvent("keydown",{key:"ArrowDown", altKey:true, bubbles:true, cancelable:true}));
+    },0);
+  }
+
+  // ---------- sincroniza URL ----------
+  function syncQS(){
+    const p = new URLSearchParams(location.search);
+    p.set("origem", origem);
+    p.set("destino", destino);
+    p.set("modo",   modo);
+    idaISO   ? p.set("data",  idaISO)   : p.delete("data");
+    (voltaISO && modo==='rt') ? p.set("volta", voltaISO) : p.delete("volta");
+    const totalPax = getTotalPax();
+    totalPax > 1 ? p.set("pax", totalPax) : p.delete("pax");
+    history.replaceState(null, "", location.pathname + "?" + p.toString());
+  }
+
+  let apiFetchTimer;
+  function scheduleAPIUpdate(){
+    clearTimeout(apiFetchTimer);
+    apiFetchTimer = setTimeout(consultarTarifas, 250);
+  }
+
+  function handleStateChange(){
+    atualizaCards();
+    syncQS();
+    scheduleAPIUpdate();
+  }
+
+  function openSeatSelection(opts={}){
+    const segmento = opts.segmento || 'ida';
+    const params = new URLSearchParams({
+      segmento,
+      codigo: opts.codigo || (segmento === 'ida' ? 'FT230' : 'FT231'),
+      origem: opts.origem || origem,
+      destino: opts.destino || destino,
+    });
+    const dataSegment = opts.data || (segmento === 'volta' ? (voltaISO || idaISO || '') : (idaISO || ''));
+    if (dataSegment) params.set('data', dataSegment);
+    if (opts.tarifa) params.set('tarifa', opts.tarifa);
+    params.set('pax', String(getTotalPax()));
+    window.location.href = `/resultados/assentos/?${params.toString()}`;
+  }
+
+  function renderFlightOptions(payload){
+    if (!dynamicResultsEl || !payload) {
+      if (dynamicResultsEl) dynamicResultsEl.innerHTML = '';
+      return;
+    }
+    const origemDesc = cidadeSemPais(payload.parametros?.origem || origem).split(',')[0] || 'Origem';
+    const destinoDesc = cidadeSemPais(payload.parametros?.destino || destino).split(',')[0] || 'Destino';
+    const rec = payload.recomendado || {};
+    const barato = payload.mais_barato || {};
+    const premiumPrice = rec.preco ? `R$ ${(rec.preco * 1.18).toFixed(0)}` : 'R$ -';
+    const swiftPrice = rec.preco ? `R$ ${(rec.preco * 1.08).toFixed(0)}` : 'R$ -';
+
+    const options = [
+      {
+        label: 'Tarifa Recomendada', airline: 'LATAM', code: 'FT230', segmento: 'ida',
+        horario: '22h15 → 07h20', detalhe: `${origemDesc} → ${destinoDesc} · Direto`,
+        price: rec.preco_fmt || 'R$ -', badge: rec.descricao || 'Inclui 1 mala despachada', data: idaISO,
+        origem: origemDesc, destino: destinoDesc,
+      },
+      {
+        label: 'Mais Barata', airline: 'GOL', code: 'FT450', segmento: 'ida',
+        horario: '06h40 → 12h55', detalhe: '1 parada · Assento econômico',
+        price: barato.preco_fmt || 'R$ -', badge: barato.descricao || 'Tarifa Light', data: idaISO,
+        origem: origemDesc, destino: destinoDesc,
+      },
+      {
+        label: 'Executiva Flex', airline: 'Delta', code: 'DT980', segmento: 'ida',
+        horario: '20h05 → 05h10', detalhe: 'Direto · Lounge & refeição',
+        price: premiumPrice, badge: 'Upgrade automático de assento', data: idaISO,
+        origem: origemDesc, destino: destinoDesc,
+      },
+      {
+        label: 'Mais Rápida', airline: 'United', code: 'UA522', segmento: 'ida',
+        horario: '09h30 → 15h20', detalhe: 'Direto · Prioridade de embarque',
+        price: swiftPrice, badge: 'Seleção grátis de assentos', data: idaISO,
+        origem: origemDesc, destino: destinoDesc,
+      },
+    ];
+
+    dynamicResultsEl.innerHTML = options.map(opt => `
+      <article class="result-card">
+        <header>
+          <div>${opt.label}</div>
+          <div class="airline">${opt.airline} • ${opt.code}</div>
+        </header>
+        <div class="schedule">${opt.horario}</div>
+        <div class="supplement">${opt.detalhe}</div>
+        <div class="supplement">${opt.badge}</div>
+        <footer>
+          <div class="price">${opt.price}</div>
+          <button type="button" class="btn-select" data-option="${opt.label}" data-segment="${opt.segmento}" data-tarifa="${opt.price}" data-codigo="${opt.code}" data-origem="${opt.origem}" data-destino="${opt.destino}" data-data="${opt.data || ''}">Selecionar</button>
+        </footer>
+      </article>
+    `).join('');
+  }
+
+  async function consultarTarifas(){
+    if (!apiStatusEl) return;
+    apiStatusEl.textContent = 'Consultando tarifas em tempo real…';
+    apiStatusEl.classList.remove('is-error','is-ok');
+    const params = new URLSearchParams({
+      origem,
+      destino,
+      pax: String(getTotalPax()),
+    });
+    if (idaISO) params.set('data', idaISO);
+
+    try {
+      const response = await fetch(`/api/voos/?${params.toString()}`, {
+        headers: { 'Accept': 'application/json' },
+        credentials: 'same-origin',
+      });
+
+      if (response.status === 403) {
+        throw new Error('Faça login para consultar tarifas personalizadas.');
+      }
+      if (!response.ok) {
+        throw new Error(`Erro ao consultar a API (HTTP ${response.status}).`);
+      }
+
+      const payload = await response.json();
+      const recomendado = payload.recomendado || {};
+      const barato = payload.mais_barato || {};
+
+      if (precoRecomendadoEl) precoRecomendadoEl.textContent = recomendado.preco_fmt || 'R$ -';
+      if (precoMaisBaratoEl) precoMaisBaratoEl.textContent = barato.preco_fmt || 'R$ -';
+      if (precoMaisBaratoResumoEl) {
+        const descricao = barato.descricao ? ` · ${barato.descricao}` : '';
+        precoMaisBaratoResumoEl.textContent = (barato.preco_fmt || 'R$ -') + descricao;
+      }
+
+      const origemDesc = payload.parametros?.origem || origem || 'origem';
+      const destinoDesc = payload.parametros?.destino || destino || 'destino';
+      apiStatusEl.textContent = `Tarifas calculadas para ${origemDesc} → ${destinoDesc}.`;
+      apiStatusEl.classList.add('is-ok');
+      renderFlightOptions(payload);
+    } catch (err) {
+      if (precoRecomendadoEl) precoRecomendadoEl.textContent = 'R$ -';
+      if (precoMaisBaratoEl) precoMaisBaratoEl.textContent = 'R$ -';
+      if (precoMaisBaratoResumoEl) precoMaisBaratoResumoEl.textContent = 'R$ -';
+      const msg = err.message || 'Não foi possível consultar a API.';
+      if (err.message && err.message.includes('Faça login')){
+        apiStatusEl.innerHTML = `${msg} <a href="/login/" style="color:#0a58ca">Entrar</a>`;
+      } else {
+        apiStatusEl.textContent = msg;
+      }
+      apiStatusEl.classList.add('is-error');
+      renderFlightOptions(null);
+    }
+  }
+
+  // ---------- interações ----------
+  // pílulas como botões
+  boxIda.addEventListener("click",  ()=> openPicker(inpIda));
+  boxVolta.addEventListener("click",()=> { if(modo==='rt') openPicker(inpVolta); });
+
+  boxIda.addEventListener("keydown",  e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); openPicker(inpIda);} });
+  boxVolta.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); if(modo==='rt') openPicker(inpVolta);} });
+
+  // escolher datas
+  inpIda.addEventListener("change", ()=>{
+    idaISO = inpIda.value || "";
+    idaTxt.textContent = fmtDataISO(idaISO);
+    inpVolta.min = idaISO || todayISO;
+    if (voltaISO && voltaISO < idaISO){
+      voltaISO = ""; inpVolta.value = ""; voltaTxt.textContent = "—";
+    }
+    handleStateChange();
+  });
+  inpVolta.addEventListener("change", ()=>{
+    voltaISO = inpVolta.value || "";
+    voltaTxt.textContent = fmtDataISO(voltaISO);
+    handleStateChange();
+  });
+
+  // inverter origem/destino
+  document.getElementById("swapBtn").addEventListener("click", ()=>{
+    [origem, destino] = [destino, origem];
+    origemTxt.textContent = origem;
+    destinoTxt.textContent = destino;
+    handleStateChange();
+  });
+
+  // botão "Buscar" — volta para a página anterior levando o estado
+  document.getElementById("refazerBusca").addEventListener("click", ()=>{
+    const params = new URLSearchParams({
+      origem, destino, data: idaISO || "", volta: (modo==='rt' ? (voltaISO||"") : "")
+    }).toString();
+    const paxParam = getTotalPax();
+    const finalParams = new URLSearchParams(params);
+    if (paxParam > 1) finalParams.set('pax', paxParam);
+    window.location.href = "/?" + finalParams.toString();
+  });
+
+  // ---------- MODO: Só ida / Ida e Volta ----------
+  function setTripMode(newMode){
+    modo = newMode;
+    btnRT.classList.toggle('is-active', modo==='rt');
+    btnOW.classList.toggle('is-active', modo==='ow');
+
+    if (modo === 'ow'){
+      // desativa/oculta volta
+      cardVolta.style.display = 'none';
+      boxVolta.classList.add('is-disabled');
+      inpVolta.disabled = true;
+      // limpa volta
+      voltaISO = '';
+      inpVolta.value = '';
+      voltaTxt.textContent = '—';
+      titulos.textContent = 'Voos só ida';
+    } else {
+      // reativa volta
+      cardVolta.style.display = '';
+      boxVolta.classList.remove('is-disabled');
+      inpVolta.disabled = false;
+      titulos.textContent = 'Voos ida e volta';
+    }
+    handleStateChange();
+  }
+
+  // cliques dos botões
+  btnOW.addEventListener('click', ()=> setTripMode('ow'));
+  btnRT.addEventListener('click', ()=> setTripMode('rt'));
+
+  // --------- Passageiros & Classe ----------
+  const paxField   = document.getElementById('paxField');
+  const paxPop     = document.getElementById('paxPop');
+  const paxSummary = document.getElementById('paxSummary');
+
+  // estado
+  const pax = { adultos: 1, idosos: 0, criancas: 0 };
+  let cabin = 'Econômica';
+
+  const qsPaxTotal = parseInt(getQS('pax', '1'), 10);
+  if (Number.isFinite(qsPaxTotal) && qsPaxTotal > 1){
+    pax.adultos = Math.min(qsPaxTotal, 9);
+    const adNumEl = document.getElementById('adNum');
+    if (adNumEl) adNumEl.textContent = pax.adultos;
+  }
+
+  function getTotalPax(){
+    return Math.max(pax.adultos + pax.idosos + pax.criancas, 1);
+  }
+
+  function plural(n, s, p){ return n===1 ? s : p; }
+  function renderSummary(){
+    const total = pax.adultos + pax.idosos + pax.criancas;
+    const g = total === 1 ? 'pessoa' : 'pessoas';
+    paxSummary.textContent = `${total} ${g} · ${cabin}`;
+  }
+  renderSummary();
+
+  // abre/fecha
+  function togglePax(open){
+    const isOpen = (open===undefined) ? paxPop.classList.contains('is-open') : !open;
+    if (isOpen){ paxPop.classList.remove('is-open'); paxField.setAttribute('aria-expanded','false'); }
+    else { paxPop.classList.add('is-open'); paxField.setAttribute('aria-expanded','true'); }
+  }
+  paxField.addEventListener('click', ()=> togglePax(true));
+  paxField.addEventListener('keydown', e=>{
+    if (e.key==='Enter' || e.key===' ') { e.preventDefault(); togglePax(true); }
+  });
+
+  // fechar ao clicar fora / Esc
+  document.addEventListener('click', (e)=>{
+    if (!paxPop.contains(e.target) && !paxField.contains(e.target)) {
+      paxPop.classList.remove('is-open'); paxField.setAttribute('aria-expanded','false');
+    }
+  });
+  document.addEventListener('keydown', (e)=>{
+    if (e.key==='Escape') { paxPop.classList.remove('is-open'); paxField.setAttribute('aria-expanded','false'); }
+  });
+
+  // steppers
+  function bindStepper(minusId, plusId, key){
+    const minus = document.getElementById(minusId);
+    const plus  = document.getElementById(plusId);
+    const numEl = document.getElementById(key==='adultos'?'adNum': key==='idosos'?'idNum':'chNum');
+
+    minus.addEventListener('click', ()=>{
+      pax[key] = Math.max(0, pax[key]-1);
+      numEl.textContent = pax[key];
+    });
+    plus.addEventListener('click', ()=>{
+      pax[key] = Math.min(9, pax[key]+1);
+      numEl.textContent = pax[key];
+    });
+  }
+  bindStepper('adMenos','adMais','adultos');
+  bindStepper('idMenos','idMais','idosos');
+  bindStepper('chMenos','chMais','criancas');
+
+  // cabine
+  document.querySelectorAll('input[name="cabin"]').forEach(r=>{
+    r.addEventListener('change', ()=> { cabin = r.value; });
+  });
+
+  // aplicar/cancelar
+  document.getElementById('paxApply').addEventListener('click', ()=>{
+    // garante pelo menos 1 passageiro
+    if (pax.adultos + pax.idosos + pax.criancas === 0) { pax.adultos = 1; document.getElementById('adNum').textContent = 1; }
+    renderSummary();
+    paxPop.classList.remove('is-open');
+    paxField.setAttribute('aria-expanded','false');
+    handleStateChange();
+
+    // (opcional) salvar na URL junto com o resto do estado:
+    // if (typeof history !== 'undefined') {
+    //   const p = new URLSearchParams(location.search);
+    //   p.set('ad', pax.adultos); p.set('id', pax.idosos); p.set('ch', pax.criancas); p.set('cab', cabin);
+    //   history.replaceState(null,'',location.pathname+'?'+p.toString());
+    // }
+  });
+  document.getElementById('paxCancel').addEventListener('click', ()=>{
+    paxPop.classList.remove('is-open');
+    paxField.setAttribute('aria-expanded','false');
+  });
+
+  // aplica modo vindo da URL ao carregar (após inicializar pax)
+  setTripMode(modo === 'ow' ? 'ow' : 'rt');
+
+  document.querySelectorAll('.btn-seat').forEach(btn=>{
+    btn.addEventListener('click', (event)=>{
+      event.preventDefault();
+      const segmento = btn.dataset.segment || 'ida';
+      const tarifa = segmento === 'ida'
+        ? (precoRecomendadoEl?.textContent || '')
+        : (precoMaisBaratoEl?.textContent || '');
+      openSeatSelection({ segmento, tarifa, codigo: btn.dataset.codigo });
+    });
+  });
+
+  const buyBtn = document.querySelector('.buy');
+  buyBtn?.addEventListener('click', (event)=>{
+    event.preventDefault();
+    openSeatSelection({
+      segmento: buyBtn.dataset.segment || 'volta',
+      tarifa: precoMaisBaratoEl?.textContent || '',
+      codigo: buyBtn.dataset.codigo,
+    });
+  });
+
+  consultarTarifas();
+
+  if (dynamicResultsEl){
+    dynamicResultsEl.addEventListener('click', (event)=>{
+      const btn = event.target.closest('.btn-select');
+      if (!btn) return;
+      openSeatSelection({
+        segmento: btn.dataset.segment || 'ida',
+        tarifa: btn.dataset.tarifa,
+        codigo: btn.dataset.codigo,
+        origem: btn.dataset.origem,
+        destino: btn.dataset.destino,
+        data: btn.dataset.data,
+      });
+    });
+  }
+
+
+
+</script>
+
+</body>
+</html>

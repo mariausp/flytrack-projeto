@@ -1,0 +1,32 @@
+{% extends "admin/base.html" %}
+
+{% block main_content %}
+  <h2>Configurações</h2>
+  <form>
+    <div>
+      <label>Nome da companhia</label>
+      <input type="text" value="Fly Track" readonly>
+    </div>
+    <div>
+      <label>Fuso horário padrão</label>
+      <select>
+        <option selected>GMT-3 (Brasília)</option>
+        <option>GMT-4 (Manaus)</option>
+        <option>GMT-5 (Nova Iorque)</option>
+      </select>
+    </div>
+    <div>
+      <label>E-mail de contato</label>
+      <input type="email" value="contato@flytrack.com" readonly>
+    </div>
+    <div>
+      <label>Notificações</label>
+      <select>
+        <option selected>Somente operacionais</option>
+        <option>Todas</option>
+        <option>Silenciar</option>
+      </select>
+    </div>
+    <button type="button" class="primary-btn">Atualizar</button>
+  </form>
+{% endblock %}

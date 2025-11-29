@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+
+{% block main_content %}
+  <h2>Passagens Emitidas</h2>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Localizador</th>
+          <th>Passageiro</th>
+          <th>Trecho</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>AB12CD</td>
+          <td>Lucas Prado</td>
+          <td>GRU → JFK</td>
+          <td><span class="badge green">Confirmada</span></td>
+        </tr>
+        <tr>
+          <td>EF34GH</td>
+          <td>Ana Torres</td>
+          <td>CGH → BSB</td>
+          <td><span class="badge blue">Check-in aberto</span></td>
+        </tr>
+        <tr>
+          <td>IJ56KL</td>
+          <td>Pedro Nunes</td>
+          <td>REC → GRU</td>
+          <td><span class="badge orange">Pagamento pendente</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
