@@ -432,11 +432,44 @@
     return (txt||"").replace(/\s*-\s*[A-Z]{2,}.*$/,"");
   }
   function guessIATA(txt){
+    // Heurística simples para tentar mapear nomes de cidade para código IATA
     txt = (txt||"").toLowerCase();
-    if (txt.includes("são paulo")||txt.includes("sao paulo")) return "GRU";
-    if (txt.includes("rio de janeiro")) return "GIG";
-    if (txt.includes("new york")||txt.includes("nova iorque")) return "EWR";
-    if (txt.includes("brasília")||txt.includes("brasilia")) return "BSB";
+
+    const map = [
+      ["são paulo","GRU"], ["sao paulo","GRU"],
+      ["rio de janeiro","GIG"],
+      ["new york","EWR"], ["nova iorque","EWR"],
+      ["brasília","BSB"], ["brasilia","BSB"],
+      ["goiânia","GYN"], ["goiania","GYN"],
+      ["curitiba","CWB"],
+      ["porto alegre","POA"],
+      ["fortaleza","FOR"],
+      ["salvador","SSA"],
+      ["belo horizonte","CNF"],
+      ["recife","REC"],
+      ["campinas","VCP"],
+      ["florianópolis","FLN"], ["florianopolis","FLN"],
+      ["manaus","MAO"],
+      ["belém","BEL"], ["belem","BEL"],
+      ["vitória","VIX"], ["vitoria","VIX"],
+      ["londres","LHR"], ["london","LHR"],
+      ["los angeles","LAX"],
+      ["chicago","ORD"],
+      ["miami","MIA"],
+      ["orlando","MCO"]
+    ];
+
+    for (const [k,v] of map){ if (txt.includes(k)) return v; }
+
+    // tenta extrair um código IATA já presente (três letras maiúsculas)
+    const byUpper = (txt||"").match(/\b([A-Z]{3})\b/);
+    if (byUpper) return byUpper[1];
+
+    // tenta extrair entre parênteses, ex: "Goiânia (GYN)"
+    const par = (txt||"").match(/\(([^)]+)\)/);
+    if (par){ const maybe = par[1].trim(); if (/^[A-Za-z]{3}$/.test(maybe)) return maybe.toUpperCase(); }
+
+    // fallback genérico
     return "XXX";
   }
   const todayISO = (()=>{ const d=new Date(), p=n=>String(n).padStart(2,'0');
