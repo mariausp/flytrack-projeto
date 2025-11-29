@@ -909,3 +909,12 @@
 
 </body>
 </html>
+
+<script>
+  try{
+    console.log('Computed body font:', getComputedStyle(document.body).fontFamily);
+    console.log('Inter loaded (fonts API):', document.fonts && document.fonts.check ? document.fonts.check('1em Inter') : 'fonts API not available');
+    const gf = Array.from(document.styleSheets).map(s=>s.href).filter(Boolean).join('\n');
+    console.log('External styleSheet hrefs:', gf);
+  }catch(e){ console.log('Font diag error',e); }
+</script>
