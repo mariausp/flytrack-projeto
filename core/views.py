@@ -14,17 +14,13 @@ from django.utils import timezone
 import hashlib, secrets, datetime, textwrap, random, re
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 from django.core.paginator import Paginator
-from .forms import SignupForm, ForgotPasswordForm, ResetPasswordForm
-from .models import PasswordResetToken
-from .models import Ticket
+from .forms import SignupForm, ForgotPasswordForm, ResetPasswordForm, VooAdminForm
+from .models import PasswordResetToken, Ticket, Voo
 from django.db.models import Q
 from django.utils.dateparse import parse_date, parse_datetime
 from decimal import Decimal, InvalidOperation
 
-from .forms import SignupForm, ForgotPasswordForm, ResetPasswordForm, VooAdminForm
-from .models import PasswordResetToken, Ticket, Voo
-import hashlib, secrets, datetime, textwrap
-from base64 import urlsafe_b64encode, urlsafe_b64decode
+# NOTE: imports above already include the forms/models used; removed duplicate imports
 
 User = get_user_model()
 
@@ -629,13 +625,8 @@ def reset_password_confirm(request, uidb64: str, token: str):
         form = ResetPasswordForm()
 
     return render(request, "password_reset_confirm.html", {"form": form, "user": user})
+
 @login_required
-@user_passes_test(lambda u: u.is_staff)
-def admin_home(request):
-    return render(request, "admin/adm_home.html")
-
-
-
 @user_passes_test(lambda u: u.is_staff)
 def adicionar_passagem(request):
 

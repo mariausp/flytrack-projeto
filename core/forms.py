@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model, password_validation
 from datetime import date
 import re
 
-from .models import Profile  # se quiser criar o perfil automaticamente
+from .models import Profile, Voo  # se quiser criar o perfil automaticamente
 
 User = get_user_model()  # usa o modelo customizado (core.User)
 
@@ -125,6 +125,12 @@ class ResetPasswordForm(forms.Form):
         if p1:
             password_validation.validate_password(p1)
         return cleaned
+# Valores de exemplo para o select de cidades (substitua por lista completa conforme necessário)
+CIDADES = [
+    ("SAO_PAULO", "São Paulo, BR"),
+    ("RIO_DE_JANEIRO", "Rio de Janeiro, BR"),
+    ("BELO_HORIZONTE", "Belo Horizonte, BR"),
+]
 class VooAdminForm(forms.ModelForm):
     class Meta:
         model = Voo  

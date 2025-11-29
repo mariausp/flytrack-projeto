@@ -5,6 +5,7 @@ from .models import Profile
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from .models import User
 from .models import Ticket
+from .models import Voo
 
 @admin.register(User)
 class UserAdmin(DjangoUserAdmin):
