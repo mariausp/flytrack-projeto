@@ -351,6 +351,7 @@
       <div class="chunk">
         <h3>IDA</h3>
         <div class="sub" id="idaSub">—</div>
+        <div class="sub" id="idaHorario">--:-- → --:--</div>
       </div>
       <div>
         <div class="big" id="origemCode">GRU</div>
@@ -376,6 +377,7 @@
       <div class="chunk">
         <h3>VOLTA</h3>
         <div class="sub" id="voltaSub">—</div>
+        <div class="sub" id="voltaHorario">--:-- → --:--</div>
       </div>
       <div>
         <div class="big" id="origemCode2">GRU</div>
@@ -413,6 +415,12 @@
     return d.toLocaleDateString("pt-BR", {
       weekday:"short", day:"2-digit", month:"short", year:"numeric"
     }).replace(/\.$/,"");
+  }
+  function fmtHorarioJanela(iso, baseHora){
+    if (!iso) return "--:--";
+    const [h, m] = String(baseHora || "09:00").split(":");
+    const d = new Date(iso + `T${h.padStart(2,"0")}:${(m||"00").padStart(2,"0")}:00`);
+    return d.toLocaleTimeString("pt-BR", { hour:"2-digit", minute:"2-digit" });
   }
   function cidadeSemPais(txt){
     return (txt||"").replace(/\s*-\s*[A-Z]{2,}.*$/,"");
@@ -554,13 +562,20 @@
     const oIATA = guessIATA(origem);
     const dIATA = guessIATA(destino);
 
+    const idaSaida   = idaISO   ? fmtHorarioJanela(idaISO, "09:00") : "--:--";
+    const idaChegada = idaISO   ? fmtHorarioJanela(idaISO, "13:00") : "--:--";
+    const volSaida   = voltaISO ? fmtHorarioJanela(voltaISO, "16:00") : "--:--";
+    const volChegada = voltaISO ? fmtHorarioJanela(voltaISO, "20:00") : "--:--";
+
     document.getElementById("idaSub").textContent       = idaISO ? fmtDataISO(idaISO) : "—";
+    document.getElementById("idaHorario").textContent   = `${idaSaida} → ${idaChegada}`;
     document.getElementById("origemCode").textContent   = oIATA;
     document.getElementById("origemCity").textContent   = oCity;
     document.getElementById("destinoCode").textContent  = dIATA;
     document.getElementById("destinoCity").textContent  = dCity;
 
     document.getElementById("voltaSub").textContent     = voltaISO ? fmtDataISO(voltaISO) : "—";
+    document.getElementById("voltaHorario").textContent = voltaISO ? `${volSaida} → ${volChegada}` : "--:--";
     document.getElementById("origemCode2").textContent  = oIATA;
     document.getElementById("origemCity2").textContent  = oCity;
     document.getElementById("destinoCode2").textContent = dIATA;
@@ -647,7 +662,7 @@
         origem: origemDesc, destino: destinoDesc,
       },
       {
-        label: 'Executiva Flex', airline: 'Delta', code: 'DT980', segmento: 'ida',
+        label: 'Executiva', airline: 'Delta', code: 'DT980', segmento: 'ida',
         horario: '20h05 → 05h10', detalhe: 'Direto · Lounge & refeição',
         price: premiumPrice, badge: 'Upgrade automático de assento', data: idaISO,
         origem: origemDesc, destino: destinoDesc,

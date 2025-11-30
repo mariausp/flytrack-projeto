@@ -144,7 +144,7 @@
       <div class="toolbar">
         <div class="muted">
           {% if total %}
-            {{ total }} viagem{{ total|pluralize:"s" }} encontrada{{ total|pluralize:"s" }}
+            {{ total }} viagem{% if total == 1 %} encontrada{% else %}ns encontradas{% endif %}
           {% else %}
             0 viagens encontradas
           {% endif %}

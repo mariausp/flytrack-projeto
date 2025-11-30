@@ -105,3 +105,18 @@ class Ticket(models.Model):
 
     def __str__(self):
         return f"{self.codigo} — {self.origem}→{self.destino}"
+
+
+class AssentoOcupado(models.Model):
+    codigo = models.CharField("Localizador / Código do voo", max_length=20)
+    assento = models.CharField(max_length=5)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("codigo", "assento")
+        indexes = [
+            models.Index(fields=["codigo"]),
+        ]
+
+    def __str__(self):
+        return f"{self.codigo} — {self.assento}"
