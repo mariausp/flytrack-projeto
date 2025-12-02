@@ -29,11 +29,35 @@
     body{ margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif; color:var(--ink); background:var(--bg); }
     .wrap{max-width:1200px;margin:32px auto;padding:0 20px}
     .card{background:var(--card);border:1px solid var(--line);border-radius:28px;padding:28px;box-shadow:0 12px 30px rgba(13,35,60,.06)}
-    .nav{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}
+    .nav{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      margin-bottom:20px;
+      position:relative;
+      z-index:10; /* garante que o menu fique acima de qualquer overlay/imagem */
+    }
     .brand{font-weight:800;letter-spacing:.2px;}
     .nav ul{display:flex;gap:28px;list-style:none;margin:0;padding:0;align-items:center}
-    .nav a{color:var(--ink);text-decoration:none;font-weight:600}
-    .login{background:#ff8a50;color:#fff;font-weight:700;padding:10px 20px;border-radius:999px;text-decoration:none;border:2px solid #ffd8c3}
+    .nav a{
+      color:var(--ink);
+      text-decoration:none;
+      font-weight:600;
+      cursor:pointer;
+      pointer-events:auto; /* garante que clique chegue no link */
+    }
+    .login{
+      background:#ff8a50;
+      color:#fff;
+      font-weight:700;
+      padding:10px 20px;
+      border-radius:999px;
+      text-decoration:none;
+      border:2px solid #ffd8c3;
+      cursor:pointer;
+      pointer-events:auto;
+    }
 
     /* menu do usuário */
     .user-menu{display:flex;align-items:center;gap:12px}
