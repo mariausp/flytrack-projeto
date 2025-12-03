@@ -27,7 +27,7 @@
     .brand{font-weight:800;letter-spacing:.2px}
     .nav ul{display:flex;gap:22px;list-style:none;margin:0;padding:0}
     .nav a{text-decoration:none;color:var(--ink);font-weight:600}
-    .pill{background:#f1f6fb;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px;text-decoration:none;color:#183352}
+    .pill{background:#f1f6fb;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px;text-decoration:none;color:#183352;cursor:pointer}
     .login{background:#ff8a50;color:#fff;font-weight:700;padding:10px 20px;border-radius:999px;text-decoration:none;border:2px solid #ffd8c3}
 
     h1{margin:6px 0 12px;font-size:32px}
@@ -96,7 +96,14 @@
 
           {% if request.user.is_authenticated %}
             <li><span class="pill">Olá, {{ request.user.get_full_name|default:request.user.username }}</span></li>
-            <li><a class="pill" href="{% url 'core:logout' %}">Sair</a></li>
+            <li>
+              <form action="{% url 'core:logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="pill" style="border:none;background:#f1f6fb;">
+                  Sair
+                </button>
+              </form>
+            </li>
           {% else %}
             <li><a class="login" href="{% url 'core:login' %}?next={{ request.path|urlencode }}">Entrar</a></li>
           {% endif %}
@@ -159,7 +166,7 @@
 
       <!-- TABELA -->
       <div id="modeTable" class="table-wrap" {% if not tickets %}style="display:none"{% endif %}>
-        {% if tickets %}
+        {% if tickets %} 
           <table class="table">
             <thead>
               <tr>
@@ -174,14 +181,17 @@
               {% for t in tickets %}
                 <tr>
                   <td><strong>{{ t.codigo }}</strong></td>
-                  <td><div style="font-weight:800">{{ t.origem }} → {{ t.destino }}</div></td>
                   <td>
                     <div style="font-weight:800">{{ t.origem }} → {{ t.destino }}</div>
-                    {% if t.assentos %}<div class="muted">Assentos: {{ t.assentos }}</div>{% endif %}
+                    {% if t.assentos %}
+                      <div class="muted">Assentos: {{ t.assentos }}</div>
+                    {% endif %}
                   </td>
                   <td>
                     <div><b>Partida:</b> {{ t.partida|date:"d/m/Y H:i" }}</div>
-                    {% if t.chegada %}<div><b>Chegada:</b> {{ t.chegada|date:"d/m/Y H:i" }}</div>{% endif %}
+                    {% if t.chegada %}
+                      <div><b>Chegada:</b> {{ t.chegada|date:"d/m/Y H:i" }}</div>
+                    {% endif %}
                   </td>
                   <td>R$ {{ t.preco }}</td>
                   <td>

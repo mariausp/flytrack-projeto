@@ -68,18 +68,6 @@
       float:right; background:#0aa1ff; color:#003253; border-radius:999px; border:0; width:36px; height:36px;
       display:inline-flex; align-items:center; justify-content:center; cursor:pointer; margin-left:6px
     }
-    .toggle{
-      display:flex; align-items:center; gap:10px; color:#eaf6ff; margin:16px 0 6px;
-    }
-    .switch{
-      width:46px;height:26px;background:#f6a57f;border-radius:999px;border:2px solid #ffd7c5;position:relative;cursor:pointer;
-    }
-    .switch::after{
-      content:""; position:absolute; left:4px; top:50%; transform:translateY(-50%);
-      width:18px; height:18px; border-radius:50%; background:#fff; transition:.2s;
-    }
-    .switch.is-on{background:#ff5a00}
-    .switch.is-on::after{left:22px}
 
     .panel .btn{
       width:100%; margin-top:14px; display:flex; align-items:center; justify-content:center;
@@ -146,7 +134,7 @@
     .pax-wrap{ position:relative; }
     .pax-pop{
       position:absolute; top:100%; left:0; margin-top:8px; width:320px;
-      background:#fff; color:var(--ink);
+      background:#fff; color:#ink;
       border:1px solid var(--line); border-radius:14px; padding:14px;
       box-shadow:0 16px 32px rgba(10,35,60,.18); z-index:60; display:none;
     }
@@ -252,10 +240,7 @@
       </div>
     </div>
 
-    <div class="toggle">
-      <div class="switch is-on"></div>
-      <div>Buscar pelo mais barato</div>
-    </div>
+    <!-- toggle "Buscar pelo mais barato" removido -->
 
     <div class="pax-wrap">
       <div class="field" id="paxField" role="button" tabindex="0" aria-haspopup="dialog" aria-expanded="false">
@@ -303,7 +288,7 @@
       </div>
     </div>
 
-    <button class="btn" id="refazerBusca">🔎 Buscar</button>
+    <!-- botão "🔎 Buscar" removido -->
   </aside>
 
   <!-- CONTEÚDO -->
@@ -361,20 +346,9 @@
       <div class="price-col">
         <div class="muted" id="precoMaisBarato">R$ -</div>
       </div>
-      <div>
-        <a class="btn-seat"
-           href="{{ selecionar_assento_url }}?segmento=volta{% if default_destino %}&origem={{ default_destino|urlencode }}{% endif %}{% if default_origem %}&destino={{ default_origem|urlencode }}{% endif %}{% if default_volta %}&data={{ default_volta|urlencode }}{% endif %}{% if default_pax %}&pax={{ default_pax|urlencode }}{% endif %}"
-           data-segment="volta" data-codigo="FT231">
-          Assento
-        </a>
-      </div>
       <div style="grid-column:1/-1; display:flex; justify-content:flex-end; gap:16px; align-items:center; margin-top:4px">
         <div class="muted" id="precoMaisBaratoResumo">R$ -</div>
-        <a class="buy"
-           href="{{ selecionar_assento_url }}?segmento=volta{% if default_destino %}&origem={{ default_destino|urlencode }}{% endif %}{% if default_origem %}&destino={{ default_origem|urlencode }}{% endif %}{% if default_volta %}&data={{ default_volta|urlencode }}{% endif %}{% if default_pax %}&pax={{ default_pax|urlencode }}{% endif %}"
-           data-segment="volta" data-codigo="FT231">
-          Comprar
-        </a>
+        <!-- botão laranja "Comprar" removido -->
       </div>
     </article>
 
@@ -765,16 +739,6 @@
     handleStateChange();
   });
 
-  document.getElementById("refazerBusca").addEventListener("click", ()=>{
-    const params = new URLSearchParams({
-      origem, destino, data: idaISO || "", volta: (modo==='rt' ? (voltaISO||"") : "")
-    }).toString();
-    const paxParam = getTotalPax();
-    const finalParams = new URLSearchParams(params);
-    if (paxParam > 1) finalParams.set('pax', paxParam);
-    window.location.href = "/?" + finalParams.toString();
-  });
-
   function setTripMode(newMode){
     modo = newMode;
     btnRT.classList.toggle('is-active', modo==='rt');
@@ -906,16 +870,6 @@
         ? (precoRecomendadoEl?.textContent || '')
         : (precoMaisBaratoEl?.textContent || '');
       openSeatSelection({ segmento, tarifa, codigo: btn.dataset.codigo });
-    });
-  });
-
-  const buyBtn = document.querySelector('.buy');
-  buyBtn?.addEventListener('click', (event)=>{
-    event.preventDefault();
-    openSeatSelection({
-      segmento: buyBtn.dataset.segment || 'volta',
-      tarifa: precoMaisBaratoEl?.textContent || '',
-      codigo: buyBtn.dataset.codigo,
     });
   });
 
