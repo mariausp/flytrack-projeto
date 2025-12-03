@@ -1,8 +1,5 @@
 {% load static %}
 {% load widget_tweaks %}
-<link rel="icon" type="image/png" href="{% static 'core/img/favicon.png' %}">
-<link rel="shortcut icon" href="{% static 'core/img/favicon.png' %}">
-
 
 <!doctype html>
 <html lang="pt-BR">
@@ -10,6 +7,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fly Track — Cadastre-se</title>
+
+  <link rel="icon" type="image/png" href="{% static 'core/img/favicon.png' %}">
+  <link rel="shortcut icon" href="{% static 'core/img/favicon.png' %}">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -79,7 +79,6 @@
     .row{display:flex; gap:12px; flex-wrap:wrap}
     .col{flex:1 1 0}
     .helptext,.errorlist{display:none}
-
   </style>
 </head>
 <body>
@@ -109,7 +108,11 @@
           {% for m in messages %}<div class="errors">{{ m }}</div>{% endfor %}
         {% endif %}
         {% if form.non_field_errors %}
-          <div class="errors">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
+          <div class="errors">
+            {% for e in form.non_field_errors %}
+              <div>{{ e }}</div>
+            {% endfor %}
+          </div>
         {% endif %}
 
         <label for="{{ form.username.id_for_label }}">Usuário</label>
@@ -125,6 +128,9 @@
             <label for="{{ form.birth_date.id_for_label }}">Data de nascimento</label>
             {{ form.birth_date|add_class:"input" }}
             {% for e in form.birth_date.errors %}<div class="errors">{{ e }}</div>{% endfor %}
+            <div class="hint-row" style="justify-content:flex-start;font-size:13px;margin-top:6px;">
+              <span>Cadastro permitido apenas para pessoas com 16 anos ou mais.</span>
+            </div>
           </div>
           <div class="col">
             <label for="{{ form.cpf.id_for_label }}">CPF</label>
@@ -167,6 +173,21 @@
       input.type = isPwd ? 'text' : 'password';
       btnEl.textContent = isPwd ? 'Ocultar' : 'Mostrar';
     }
+
+    // Limitar a data de nascimento para idade mínima de 16 anos
+    (function(){
+      const birthInput = document.getElementById("{{ form.birth_date.id_for_label }}");
+      if (!birthInput) return;
+
+      const today = new Date();
+      const minAge = 16;
+      today.setFullYear(today.getFullYear() - minAge);
+
+      const pad = n => String(n).padStart(2, '0');
+      const maxDate = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+
+      birthInput.max = maxDate;
+    })();
   </script>
 </body>
 </html>

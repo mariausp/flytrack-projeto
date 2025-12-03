@@ -78,8 +78,18 @@ class SignupForm(UserCreationForm):
 
     def clean_birth_date(self):
         bd = self.cleaned_data.get("birth_date")
+
+        # data no futuro
         if bd and bd > date.today():
             raise forms.ValidationError("Data de nascimento inválida.")
+
+        # regra: apenas maiores de 16 anos
+        if bd:
+            hoje = date.today()
+            idade = hoje.year - bd.year - ((hoje.month, hoje.day) < (bd.month, bd.day))
+            if idade < 16:
+                raise forms.ValidationError("O cadastro é permitido apenas para maiores de 16 anos.")
+
         return bd
 
     # --- Salvamento ---
