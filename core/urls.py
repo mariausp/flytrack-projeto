@@ -1,7 +1,9 @@
-from django.urls import path
+from django.urls import path, reverse_lazy
 from django.contrib.auth.views import LogoutView
+from django.contrib.auth import views as auth_views
 
 from . import views, api
+from .forms import CustomPasswordResetForm
 
 app_name = "core"
 
@@ -16,13 +18,46 @@ urlpatterns = [
     # Autenticação
     path("signup/", views.signup, name="signup"),
     path("login/", views.login_view, name="login"),
-    path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
+    path(
+        "logout/",
+        LogoutView.as_view(next_page="core:login"),  # usa o nome com namespace
+        name="logout",
+    ),
 
-    # Esqueci minha senha (custom)
-    path("senha/esqueci/", views.forgot_password, name="password_reset"),
-    path("senha/enviado/", views.reset_password_done, name="password_reset_done"),
-    path("senha/redefinir/<uidb64>/<token>/", views.reset_password_confirm, name="password_reset_confirm"),
-    path("senha/concluida/", views.reset_password_complete, name="password_reset_complete"),
+    # Esqueci minha senha (usando as views prontas do Django)
+    path(
+        "senha/esqueci/",
+        auth_views.PasswordResetView.as_view(
+            template_name="password_reset.html",
+            form_class=CustomPasswordResetForm,  # só deixa passar e-mail cadastrado
+            email_template_name="password_reset_email.html",
+            subject_template_name="password_reset_subject.txt",
+            success_url=reverse_lazy("core:password_reset_done"),
+        ),
+        name="password_reset",
+    ),
+    path(
+        "senha/enviado/",
+        auth_views.PasswordResetDoneView.as_view(
+            template_name="password_reset_done.html",
+        ),
+        name="password_reset_done",
+    ),
+    path(
+        "senha/redefinir/<uidb64>/<token>/",
+        auth_views.PasswordResetConfirmView.as_view(
+            template_name="password_reset_confirm.html",
+            success_url=reverse_lazy("core:password_reset_complete"),
+        ),
+        name="password_reset_confirm",
+    ),
+    path(
+        "senha/concluida/",
+        auth_views.PasswordResetCompleteView.as_view(
+            template_name="password_reset_complete.html",
+        ),
+        name="password_reset_complete",
+    ),
 
     # Pós-login (decide admin x home)
     path("post-login/", views.post_login, name="post_login"),

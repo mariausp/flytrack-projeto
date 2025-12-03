@@ -1,7 +1,8 @@
 # core/forms.py
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, PasswordResetForm
 from django.contrib.auth import get_user_model, password_validation
+from django.utils.translation import gettext_lazy as _
 from datetime import date
 import re
 
@@ -97,11 +98,13 @@ class SignupForm(UserCreationForm):
             )
         return user
 
+
 class ForgotPasswordForm(forms.Form):
     email = forms.EmailField(label="E-mail", widget=forms.EmailInput(attrs={"autocomplete": "email"}))
 
     def clean_email(self):
         return self.cleaned_data["email"].strip().lower()  # normaliza
+
 
 class ResetPasswordForm(forms.Form):
     new_password = forms.CharField(
@@ -125,3 +128,26 @@ class ResetPasswordForm(forms.Form):
         if p1:
             password_validation.validate_password(p1)
         return cleaned
+
+
+# --- Form para PasswordResetView que só aceita e-mails cadastrados ---
+class CustomPasswordResetForm(PasswordResetForm):
+    """
+    Usado na PasswordResetView para garantir que só e-mails cadastrados
+    passem pela validação. Se o e-mail não existir, o formulário mostra erro
+    e nenhum e-mail de reset é enviado.
+    """
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email", "").strip().lower()
+
+        # chama validações básicas do form pai (formato, obrigatório etc.)
+        if not email:
+            raise forms.ValidationError(_("Informe um e-mail válido."))
+
+        if not User.objects.filter(email__iexact=email, is_active=True).exists():
+            raise forms.ValidationError(
+                _("Não existe nenhuma conta cadastrada com este e-mail.")
+            )
+
+        return email

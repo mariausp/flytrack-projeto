@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 from django.urls import reverse_lazy
-import dj_database_url
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -11,15 +10,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    'django-insecure-^ce**m85&&o0rw4^jm-ght1@m8wwy%!#pu+*v2r(nqwydl0b(e',
-)
+SECRET_KEY = 'django-insecure-^ce**m85&&o0rw4^jm-ght1@m8wwy%!#pu+*v2r(nqwydl0b(e'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DJANGO_DEBUG", "False") == "True"
+DEBUG = True
 
-ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "*").split(",")
+ALLOWED_HOSTS = []
 
 # usa o custom user que vamos criar
 AUTH_USER_MODEL = "core.User"
@@ -82,10 +78,10 @@ WSGI_APPLICATION = 'flytrack.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    "default": dj_database_url.config(
-        default=os.environ.get("DATABASE_URL", f"sqlite:///{BASE_DIR / 'db.sqlite3'}"),
-        conn_max_age=600,
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
 }
 
 
@@ -124,7 +120,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [ BASE_DIR / 'core' / 'static' ]   # ← nossos estáticos
 
 LOGIN_REDIRECT_URL = 'core:home'      # depois de logar
