@@ -16,8 +16,7 @@ urlpatterns = [
     # Autenticação
     path("signup/", views.signup, name="signup"),
     path("login/", views.login_view, name="login"),
-    path('logout/', views.logout_view, name='logout'),
-    path('logout/done/', views.home, name='logout_done'),
+    path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
 
     # Esqueci minha senha (custom)
     path("senha/esqueci/", views.forgot_password, name="password_reset"),

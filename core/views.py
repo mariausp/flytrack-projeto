@@ -16,7 +16,7 @@ from base64 import urlsafe_b64encode, urlsafe_b64decode
 from django.core.paginator import Paginator
 from .forms import SignupForm, ForgotPasswordForm, ResetPasswordForm
 from .models import PasswordResetToken
-from .models import Ticket, AssentoOcupado
+from .models import Ticket
 from django.db.models import Q
 from django.utils.dateparse import parse_date, parse_datetime
 from decimal import Decimal, InvalidOperation
@@ -173,7 +173,7 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     messages.info(request, "Você saiu da conta.")
-    return render(request, "logout_done.html")
+    return redirect("core:home")
 
 @login_required
 def post_login(request):
@@ -250,11 +250,7 @@ def selecionar_assento(request):
     pax_total = max(1, min(pax_total, 9))
 
     seat_rows = []
-    blocked = set()
-
-    if codigo:
-        ocupados = AssentoOcupado.objects.filter(codigo=codigo).values_list("assento", flat=True)
-        blocked.update(str(a).strip() for a in ocupados if a)
+    blocked = {"2B", "3C", "4D", "5E", "6A"}
     preferred = {"1A", "1B", "1C", "7A", "7F"}
     for row in range(1, 11):
         seats = []
@@ -426,7 +422,7 @@ def _persist_ticket(request, summary: dict, localizador: str):
         assentos_str = ", ".join(assentos_data)
 
     try:
-        ticket = Ticket.objects.create(
+        Ticket.objects.create(
             user=request.user,
             codigo=localizador,
             origem=summary.get("origem", "Origem"),
@@ -437,14 +433,6 @@ def _persist_ticket(request, summary: dict, localizador: str):
             status="PAGO",
             assentos=assentos_str[:120],
         )
-        for seat in assentos_data:
-            try:
-                AssentoOcupado.objects.get_or_create(
-                    codigo=localizador,
-                    assento=str(seat).strip(),
-                )
-            except Exception:
-                continue
     except Exception as exc:
         print("[CHECKOUT] Não foi possível salvar o ticket:", exc)
 
@@ -501,7 +489,7 @@ def pagamento(request):
                 errors["cvv"] = "CVV inválido."
 
         if not requires_card or not errors:
-            localizador = (summary.get("codigo") or "FT000").strip() or f"FT{random.randint(100000, 999999)}"
+            localizador = f"FT{random.randint(100000, 999999)}"
             if requires_card:
                 payer_name = data["nome"]
             else:
