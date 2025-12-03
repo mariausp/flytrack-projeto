@@ -33,6 +33,7 @@ User = get_user_model()
 
 
 # ---------------------- HISTÓRICO ----------------------
+# ---------------------- HISTÓRICO ----------------------
 @login_required
 def historico(request):
     qs = Ticket.objects.filter(user=request.user).order_by('-partida')
@@ -40,9 +41,10 @@ def historico(request):
     # parâmetros de filtro (GET)
     q = (request.GET.get('q') or '').strip()
     status = (request.GET.get('status') or '').strip().upper()
-    dfrom = request.GET.get('from') or ''
-    dto = request.GET.get('to') or ''
+    dfrom_str = (request.GET.get('from') or '').strip()
+    dto_str   = (request.GET.get('to') or '').strip()
 
+    # busca por texto
     if q:
         qs = qs.filter(
             Q(codigo__icontains=q) |
@@ -51,18 +53,27 @@ def historico(request):
             Q(companhia__icontains=q)
         )
 
+    # status
     if status:
         qs = qs.filter(status=status)
 
-    if dfrom:
-        df = parse_date(dfrom)
-        if df:
-            qs = qs.filter(partida__date__gte=df)
+    # datas
+    df = parse_date(dfrom_str) if dfrom_str else None
+    dt = parse_date(dto_str)   if dto_str   else None
 
-    if dto:
-        dt = parse_date(dto)
-        if dt:
-            qs = qs.filter(partida__date__lte=dt)
+    if df and not dt:
+        # Só "Data de Ida (de)" preenchida → APENAS aquele dia
+        qs = qs.filter(partida__date=df)
+    elif df and dt:
+        # Intervalo "de" / "até"
+        if df <= dt:
+            qs = qs.filter(partida__date__range=(df, dt))
+        else:
+            # Se usuário inverter sem querer (de > até), cai só no dia "de"
+            qs = qs.filter(partida__date=df)
+    elif dt:
+        # Só "até" preenchido: tudo até essa data
+        qs = qs.filter(partida__date__lte=dt)
 
     paginator = Paginator(qs, 10)
     page_obj = paginator.get_page(request.GET.get('page'))
@@ -71,7 +82,12 @@ def historico(request):
         'tickets': page_obj.object_list,
         'page_obj': page_obj,
         'total': qs.count(),
-        'filters': {'q': q, 'from': dfrom, 'to': dto, 'status': status},
+        'filters': {
+            'q': q,
+            'from': dfrom_str,
+            'to': dto_str,
+            'status': status,
+        },
     }
     return render(request, "historico.html", ctx)
 
