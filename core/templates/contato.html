@@ -1,11 +1,13 @@
 {% load static %}
-<link rel="icon" type="image/png" href="{% static 'core/img/favicon.png' %}">
-<link rel="shortcut icon" href="{% static 'core/img/favicon.png' %}">
+<!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Contato — Fly Track</title>
+
+  <link rel="icon" type="image/png" href="{% static 'core/img/favicon.png' %}">
+  <link rel="shortcut icon" href="{% static 'core/img/favicon.png' %}">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -154,19 +156,22 @@
 
         <h2 id="contato-title" class="visually-hidden" style="position:absolute;left:-9999px">Formulário de contato</h2>
 
-        <form method="post" action="{% url 'core:contato' %}" novalidate>
+        <!-- sem novalidate, para usar a validação HTML5 -->
+        <form method="post" action="{% url 'core:contato' %}">
           {% csrf_token %}
 
           <div class="row">
             <div class="field">
               <label for="id_nome">Nome completo</label>
-              <input id="id_nome" name="nome" type="text" autocomplete="name" required placeholder="Ex.: Rafael Moreira Duarte">
+              <input id="id_nome" name="nome" type="text" autocomplete="name"
+                     required placeholder="Ex.: Rafael Moreira Duarte">
               <div class="help">Como você prefere ser chamada(o).</div>
             </div>
 
             <div class="field">
               <label for="id_email">E-mail</label>
-              <input id="id_email" name="email" type="email" autocomplete="email" required placeholder="voce@exemplo.com">
+              <input id="id_email" name="email" type="email" autocomplete="email"
+                     required placeholder="voce@exemplo.com">
               <div class="help">Usaremos para responder sua mensagem.</div>
             </div>
           </div>
@@ -174,20 +179,23 @@
           <div class="row">
             <div class="field">
               <label for="id_assunto">Assunto</label>
-              <input id="id_assunto" name="assunto" type="text" maxlength="120" required placeholder="Ex.: Dúvida sobre reembolso">
+              <input id="id_assunto" name="assunto" type="text" maxlength="120"
+                     required placeholder="Ex.: Dúvida sobre reembolso">
               <div class="help"><span id="assuntoCount">0</span>/120</div>
             </div>
 
             <div class="field">
               <label for="id_pedido">Nº do pedido (opcional)</label>
-              <input id="id_pedido" name="pedido" type="text" inputmode="numeric" class="mono" placeholder="FT-2025-000123">
+              <input id="id_pedido" name="pedido" type="text" inputmode="numeric"
+                     class="mono" placeholder="FT-2025-000123">
               <div class="help">Se tiver um pedido, isso agiliza o atendimento.</div>
             </div>
           </div>
 
           <div class="field">
             <label for="id_msg">Mensagem</label>
-            <textarea id="id_msg" name="mensagem" required placeholder="Conte em detalhes como podemos ajudar."></textarea>
+            <textarea id="id_msg" name="mensagem" required
+                      placeholder="Conte em detalhes como podemos ajudar."></textarea>
             <div class="help">Dica: inclua datas, origem/destino e qualquer print relevante.</div>
           </div>
 
@@ -216,10 +224,13 @@
           <li class="item">
             <div>
               <b>Central de ajuda</b>
-              <div><a href="{% url 'core:historico' %}">Consultar histórico de viagens</a></div>
-              <div class="help">Veja status de reservas e pagamentos.</div>
+              <div class="mono">0800 123 7474</div>
+              <div class="help">
+                Ligue para falar com um atendente sobre reservas, alterações e reembolsos
+              </div>
             </div>
           </li>
+
           <li class="item cta-card">
             <div>
               <b>Prioridade — voos nas próximas 24h</b>
@@ -240,10 +251,12 @@
     const assunto = document.getElementById('id_assunto');
     const assuntoCount = document.getElementById('assuntoCount');
     if (assunto && assuntoCount){
-      const update = ()=> assunto.value.length > 120
-        ? assuntoCount.textContent = '120'
-        : assuntoCount.textContent = assunto.value.length;
-      assunto.addEventListener('input', update); update();
+      const update = () => {
+        const len = assunto.value.length;
+        assuntoCount.textContent = len > 120 ? '120' : len;
+      };
+      assunto.addEventListener('input', update);
+      update();
     }
   </script>
 </body>
