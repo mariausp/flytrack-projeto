@@ -5,97 +5,318 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Pagamento — Fly Track</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <style>
-    body{margin:0;font-family:Inter,system-ui,Segoe UI,sans-serif;background:#f6f9fc;color:#0b1e45;}
-    .wrap{max-width:960px;margin:32px auto;padding:0 18px;}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-    @media(max-width:900px){.grid{grid-template-columns:1fr;}}
-    .card{background:#fff;border:1px solid #e1e7f0;border-radius:20px;padding:26px;box-shadow:0 16px 36px rgba(10,35,60,.08);}
-    h1{margin:0 0 20px;font-size:28px;}
-    label{display:block;font-weight:600;margin-bottom:6px;}
-    input{width:100%;border:1px solid #ced7e5;border-radius:12px;padding:12px 14px;font-size:16px;margin-bottom:14px;}
-    input:focus{outline:3px solid #cfe3ff;border-color:#8fb4ff;}
-    .error{color:#c0392b;font-size:13px;margin:-10px 0 12px;}
-    .btn{width:100%;border:0;border-radius:14px;padding:14px;font-size:17px;font-weight:700;cursor:pointer;background:#ff5a00;color:#fff;box-shadow:0 12px 24px rgba(255,90,0,.25);}
-    .summary{background:#f8fbff;border:1px solid #dfe7f4;border-radius:16px;padding:18px;}
-    .summary h2{margin:0 0 12px;font-size:20px;}
-    .row{display:flex;justify-content:space-between;margin-bottom:6px;font-weight:600;}
-    .badge{display:inline-block;margin-top:8px;padding:6px 14px;border-radius:999px;background:#eaf2ff;color:#234579;font-weight:600;}
-    .alt-box{background:#f8fbff;border:1px solid #dfe7f4;border-radius:16px;padding:18px;margin-bottom:18px;}
-    .pix-code{font-family:"JetBrains Mono","Fira Code",monospace;font-size:18px;font-weight:600;background:#fff;border:1px dashed #94a3b8;border-radius:12px;padding:12px 16px;margin:12px 0;}
-    .info-text{color:#5b6b85;font-size:15px;line-height:1.5;margin:10px 0;}
+    :root{
+      --bg:#edf6fb;
+      --card:#ffffff;
+      --ink:#0b1e45;
+      --muted:#3a5674;
+      --line:#e1e7f0;
+      --cta:#ff5a00;
+      --cta-ink:#ffffff;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body.checkout-body{
+      margin:0;
+      min-height:100vh;
+      font-family:Inter,system-ui,Segoe UI,sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+    }
+
+    .checkout-main{
+      max-width:1100px;
+      margin:32px auto 40px;
+      padding:0 18px;
+    }
+
+    .checkout-grid{
+      display:flex;
+      flex-wrap:wrap;
+      gap:22px;
+    }
+
+    .checkout-col-form{
+      flex:1 1 380px;
+      min-width:0;
+    }
+
+    .checkout-col-summary{
+      flex:1 1 320px;
+      min-width:0;
+    }
+
+    .checkout-card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:24px;
+      padding:26px 24px;
+      box-shadow:0 16px 36px rgba(10,35,60,.08);
+    }
+
+    .checkout-title{
+      margin:0 0 14px;
+      font-size:26px;
+    }
+
+    .checkout-subtitle{
+      margin:0 0 20px;
+      font-size:14px;
+      color:var(--muted);
+    }
+
+    .checkout-label{
+      display:block;
+      font-weight:600;
+      margin-bottom:6px;
+      font-size:14px;
+      color:var(--muted);
+    }
+
+    .checkout-input{
+      width:100%;
+      border:1px solid #ced7e5;
+      border-radius:12px;
+      padding:12px 14px;
+      font-size:15px;
+      margin-bottom:12px;
+      background:#f8fbff;
+    }
+
+    .checkout-input:focus{
+      outline:3px solid #cfe3ff;
+      border-color:#8fb4ff;
+      background:#fff;
+    }
+
+    .checkout-row-2{
+      display:flex;
+      gap:14px;
+    }
+    .checkout-row-2 > div{ flex:1 1 0; }
+
+    .checkout-error{
+      color:#c0392b;
+      font-size:13px;
+      margin:-8px 0 10px;
+    }
+
+    .checkout-btn{
+      width:100%;
+      border:0;
+      border-radius:999px;
+      padding:14px;
+      font-size:17px;
+      font-weight:700;
+      cursor:pointer;
+      background:var(--cta);
+      color:var(--cta-ink);
+      box-shadow:0 12px 24px rgba(255,90,0,.25);
+      margin-top:6px;
+    }
+
+    .checkout-btn:hover{
+      transform:translateY(-1px);
+      box-shadow:0 16px 30px rgba(255,90,0,.35);
+    }
+
+    /* Métodos alternativos (PIX / boleto) */
+    .checkout-alt-box{
+      background:#f8fbff;
+      border:1px solid #dfe7f4;
+      border-radius:16px;
+      padding:18px;
+      margin-bottom:18px;
+    }
+
+    .checkout-info{
+      color:#5b6b85;
+      font-size:15px;
+      line-height:1.5;
+      margin:8px 0;
+    }
+
+    .checkout-pix{
+      font-family:"JetBrains Mono","Fira Code",monospace;
+      font-size:17px;
+      font-weight:600;
+      background:#fff;
+      border:1px dashed #94a3b8;
+      border-radius:12px;
+      padding:10px 14px;
+      margin:10px 0 4px;
+    }
+
+    /* RESUMO */
+    .checkout-summary-title{
+      margin:0 0 14px;
+      font-size:20px;
+    }
+
+    .checkout-summary-line{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      font-size:14px;
+      margin-bottom:6px;
+      font-weight:600;
+    }
+    .checkout-summary-line span:first-child{
+      color:var(--muted);
+    }
+
+    .checkout-summary-line-total{
+      margin-top:10px;
+      padding-top:10px;
+      border-top:1px solid #dde5f1;
+      font-size:20px;
+    }
+
+    .checkout-badge{
+      display:inline-block;
+      margin-top:10px;
+      padding:6px 14px;
+      border-radius:999px;
+      background:#eaf2ff;
+      color:#234579;
+      font-weight:600;
+      font-size:13px;
+    }
+
+    @media (max-width:720px){
+      .checkout-card{ padding:22px 18px; }
+    }
   </style>
 </head>
-<body>
-  <div class="wrap">
-    <div class="grid">
-      <section class="card">
-        <h1>Pagamento seguro</h1>
+<body class="checkout-body">
+  <div class="checkout-main">
+    <div class="checkout-grid">
+
+      <!-- FORM / CARTÃO OU PIX/BOLETO -->
+      <section class="checkout-card checkout-col-form">
+        <h1 class="checkout-title">Pagamento seguro</h1>
+        <p class="checkout-subtitle">Seus dados são usados apenas para processar esta compra.</p>
+
         {% if requires_card %}
           <form method="post">
             {% csrf_token %}
-            <label for="nome">Titular do cartão</label>
-            <input id="nome" name="nome" value="{{ form.nome }}" required />
-            {% if errors.nome %}<div class="error">{{ errors.nome }}</div>{% endif %}
 
-            <label for="cpf">CPF</label>
-            <input id="cpf" name="cpf" value="{{ form.cpf }}" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required />
-            {% if errors.cpf %}<div class="error">{{ errors.cpf }}</div>{% endif %}
+            <label class="checkout-label" for="nome">Titular do cartão</label>
+            <input class="checkout-input" id="nome" name="nome" value="{{ form.nome }}" required />
+            {% if errors.nome %}<div class="checkout-error">{{ errors.nome }}</div>{% endif %}
 
-            <label for="cartao">Número do cartão</label>
-            <input id="cartao" name="cartao" value="{{ form.cartao }}" inputmode="numeric" placeholder="0000 0000 0000 0000" required />
-            {% if errors.cartao %}<div class="error">{{ errors.cartao }}</div>{% endif %}
+            <label class="checkout-label" for="cpf">CPF</label>
+            <input class="checkout-input" id="cpf" name="cpf" value="{{ form.cpf }}"
+                   inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required />
+            {% if errors.cpf %}<div class="checkout-error">{{ errors.cpf }}</div>{% endif %}
 
-            <div style="display:flex;gap:14px;">
-              <div style="flex:1">
-                <label for="validade">Validade</label>
-                <input id="validade" name="validade" value="{{ form.validade }}" placeholder="MM/AA" required />
-                {% if errors.validade %}<div class="error">{{ errors.validade }}</div>{% endif %}
+            <label class="checkout-label" for="cartao">Número do cartão</label>
+            <input class="checkout-input" id="cartao" name="cartao" value="{{ form.cartao }}"
+                   inputmode="numeric" placeholder="0000 0000 0000 0000" required />
+            {% if errors.cartao %}<div class="checkout-error">{{ errors.cartao }}</div>{% endif %}
+
+            <div class="checkout-row-2">
+              <div>
+                <label class="checkout-label" for="validade">Validade</label>
+                <input class="checkout-input" id="validade" name="validade"
+                       value="{{ form.validade }}" placeholder="MM/AA" required />
+                {% if errors.validade %}<div class="checkout-error">{{ errors.validade }}</div>{% endif %}
               </div>
-              <div style="flex:1">
-                <label for="cvv">CVV</label>
-                <input id="cvv" name="cvv" value="{{ form.cvv }}" inputmode="numeric" maxlength="4" required />
-                {% if errors.cvv %}<div class="error">{{ errors.cvv }}</div>{% endif %}
+              <div>
+                <label class="checkout-label" for="cvv">CVV</label>
+                <input class="checkout-input" id="cvv" name="cvv" value="{{ form.cvv }}"
+                       inputmode="numeric" maxlength="4" required />
+                {% if errors.cvv %}<div class="checkout-error">{{ errors.cvv }}</div>{% endif %}
               </div>
             </div>
 
-            <button class="btn" type="submit">Pagar e concluir</button>
+            <button class="checkout-btn" type="submit">Pagar e concluir</button>
           </form>
+
         {% else %}
-          <div class="alt-box">
-            <p class="info-text">Você escolheu <strong>{{ summary.metodo_pagamento_label }}</strong>. {{ method_info.description }}</p>
+          <div class="checkout-alt-box">
+            <p class="checkout-info">
+              Você escolheu <strong>{{ summary.metodo_pagamento_label }}</strong>.
+              {{ method_info.description }}
+            </p>
+
             {% if payment_method == 'pix' %}
-              <p class="info-text">Escaneie o QR Code abaixo ou copie a chave estática para concluir o pagamento.</p>
-              <div class="pix-code">pix@flytrack.com.br</div>
-              <p class="info-text">Após a confirmação do PIX, clique em "Confirmar" para liberar o comprovante e seguir para a página final.</p>
+              <p class="checkout-info">Escaneie o QR Code abaixo ou copie a chave estática para concluir o pagamento.</p>
+              <div class="checkout-pix">pix@flytrack.com.br</div>
+              <p class="checkout-info">Após a confirmação do PIX, clique em “Confirmar” para liberar o comprovante e seguir para a página final.</p>
             {% elif payment_method == 'boleto' %}
-              <p class="info-text">Geraremos um boleto com vencimento em 1 dia útil. Você também receberá o PDF por e-mail.</p>
+              <p class="checkout-info">Geraremos um boleto com vencimento em 1 dia útil. Você também receberá o PDF por e-mail.</p>
             {% endif %}
           </div>
+
           <form method="post">
             {% csrf_token %}
-            <button class="btn" type="submit">Confirmar pagamento {{ summary.metodo_pagamento_label }}</button>
+            <button class="checkout-btn" type="submit">
+              Confirmar pagamento {{ summary.metodo_pagamento_label }}
+            </button>
           </form>
         {% endif %}
       </section>
 
-      <aside class="card summary">
-        <h2>Resumo</h2>
-        <div class="row"><span>Trecho</span><span>{{ summary.origem }} → {{ summary.destino }}</span></div>
-        <div class="row"><span>Segmento</span><span>{{ summary.segmento|title }}</span></div>
-        <div class="row"><span>Data</span><span>{{ summary.data_viagem|default:"Data a confirmar" }}</span></div>
-        <div class="row"><span>Passageiros</span><span>{{ summary.pax_total }}</span></div>
-        <div class="row"><span>Assentos</span><span>{{ summary.assentos|join:", "|default:"—" }}</span></div>
-        <div class="row"><span>Método</span><span>{{ summary.metodo_pagamento_label }}</span></div>
-        <div class="row" style="margin-top:16px;font-weight:600;"><span>Tarifa base</span><span>{{ summary.tarifa_fmt }}</span></div>
+      <!-- RESUMO -->
+      <aside class="checkout-card checkout-col-summary">
+        <h2 class="checkout-summary-title">Resumo</h2>
+
+        <div class="checkout-summary-line">
+          <span>Trecho</span>
+          <span>{{ summary.origem }} → {{ summary.destino }}</span>
+        </div>
+
+        <div class="checkout-summary-line">
+          <span>Segmento</span>
+          <span>{{ summary.segmento|title }}</span>
+        </div>
+
+        <div class="checkout-summary-line">
+          <span>Data</span>
+          <span>{{ summary.data_viagem|default:"Data a confirmar" }}</span>
+        </div>
+
+        <div class="checkout-summary-line">
+          <span>Passageiros</span>
+          <span>{{ summary.pax_total }}</span>
+        </div>
+
+        <div class="checkout-summary-line">
+          <span>Assentos</span>
+          <span>{{ summary.assentos|join:", "|default:"—" }}</span>
+        </div>
+
+        <div class="checkout-summary-line">
+          <span>Método</span>
+          <span>{{ summary.metodo_pagamento_label }}</span>
+        </div>
+
+        <div class="checkout-summary-line">
+          <span>Tarifa base</span>
+          <span>{{ summary.tarifa_fmt }}</span>
+        </div>
+
         {% if summary.has_premium %}
-          <div class="row" style="font-weight:600;"><span>Premium ({{ summary.premium_count }})</span><span>{{ summary.premium_total_fmt }}</span></div>
+          <div class="checkout-summary-line">
+            <span>Premium ({{ summary.premium_count }})</span>
+            <span>{{ summary.premium_total_fmt }}</span>
+          </div>
         {% endif %}
-        <div class="row" style="margin-top:12px;font-size:20px;"><span>Total</span><span>{{ summary.total_fmt }}</span></div>
-        <span class="badge">Voo {{ summary.codigo }}</span>
+
+        <div class="checkout-summary-line checkout-summary-line-total">
+          <span>Total</span>
+          <span>{{ summary.total_fmt }}</span>
+        </div>
+
+        <span class="checkout-badge">Voo {{ summary.codigo }}</span>
       </aside>
     </div>
   </div>
