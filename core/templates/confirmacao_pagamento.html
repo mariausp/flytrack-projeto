@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+  <body style="font-family: Arial, sans-serif; color:#1f2933;">
+    <h2>Olá, {{ nome_cliente }}!</h2>
+    <p>Seu pagamento foi confirmado. Aqui estão os detalhes da sua viagem:</p>
+
+    <p><strong>Localizador:</strong> {{ localizador }}</p>
+    <p><strong>Voo:</strong> {{ summary.codigo }}</p>
+    <p><strong>Trecho:</strong> {{ summary.origem }} → {{ summary.destino }}</p>
+    <p><strong>Partida:</strong> {{ partida_data }} às {{ partida_hora }}</p>
+    <p><strong>Chegada prevista:</strong> {{ chegada_data }} às {{ chegada_hora }}</p>
+    <p><strong>Assentos:</strong> {{ assentos_str|default:"A definir" }}</p>
+    <p><strong>Valor pago:</strong> {{ valor_fmt }}</p>
+
+    <hr>
+    <h3>Regras de bagagem (exemplo)</h3>
+    <ul>
+      <li>1 bagagem de mão de até 10 kg que caiba no compartimento superior.</li>
+      <li>Bagagem despachada conforme a sua tarifa (leve o comprovante no check-in).</li>
+      <li>Itens proibidos: objetos cortantes, inflamáveis, aerossóis em excesso e líquidos acima do permitido.</li>
+    </ul>
+
+    <h3>Segurança e recomendações</h3>
+    <ul>
+      <li>Chegue ao aeroporto com pelo menos 2 horas de antecedência (voos nacionais)
+          ou 3 horas (internacionais).</li>
+      <li>Não esqueça documento oficial com foto e, se necessário, passaporte e vistos válidos.</li>
+      <li>Verifique seus dados (nome, data, horário e destino) antes de seguir para o embarque.</li>
+      <li>Guarde este e-mail: ele contém as principais informações da sua viagem.</li>
+    </ul>
+
+    <p>Boa viagem!<br>Equipe FlyTrack</p>
+  </body>
+</html>
