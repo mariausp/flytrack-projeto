@@ -95,11 +95,9 @@
       padding:10px 12px 12px; font-weight:700; box-shadow: inset 0 2px 0 rgba(255,255,255,.6);
       min-height:68px; cursor:pointer; user-select:none;
     }
-    .pill-date small{display:block;color:#0a2d4e;font-weight:600;opacity:.85;margin-bottom:6px}
-    .pill-date strong{display:block;font-weight:800}
-    .pill-date:focus-visible{ outline:3px solid #bfe0ff; outline-offset:2px; }
     .pill-head{ font-weight:700; opacity:.85; margin-bottom:6px; }
     .pill-value{ font-weight:800; }
+    .pill-date:focus-visible{ outline:3px solid #bfe0ff; outline-offset:2px; }
 
     .pill-date__input{
       position:absolute; inset:0; width:100%; height:100%;
@@ -132,6 +130,11 @@
       white-space:nowrap; font-size:14px; transition:.2s;
     }
     .btn-seat:hover{background:#0d5a95; transform:translateY(-1px); box-shadow:0 4px 8px rgba(16,111,182,.2);}
+    .btn-seat.is-disabled{
+      opacity:.5;
+      cursor:not-allowed;
+      pointer-events:none;
+    }
     .price-col{text-align:right; display:flex; flex-direction:column; gap:6px; align-items:flex-end;}
     .price-col .price{font-size:32px; font-weight:900; line-height:1;}
     .buy{border:0; background:#ff8a50; color:#fff; font-weight:900; padding:14px 18px; border-radius:999px; cursor:pointer}
@@ -400,8 +403,85 @@
   function guessIATA(txt){
     txt = (txt||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    // … (mantive TODO o resto da função guessIATA, igual ao seu código) …
+    // Brasil - Capitais e principais cidades
+    if (txt.includes("sao paulo") || txt.includes("guarulhos")) return "GRU";
+    if (txt.includes("rio de janeiro")) return "GIG";
+    if (txt.includes("brasilia")) return "BSB";
+    if (txt.includes("belo horizonte") || txt.includes("confins")) return "CNF";
+    if (txt.includes("salvador")) return "SSA";
+    if (txt.includes("fortaleza")) return "FOR";
+    if (txt.includes("recife")) return "REC";
+    if (txt.includes("curitiba")) return "CWB";
+    if (txt.includes("porto alegre")) return "POA";
+    if (txt.includes("manaus")) return "MAO";
+    if (txt.includes("belem")) return "BEL";
+    if (txt.includes("goiania")) return "GYN";
+    if (txt.includes("campinas") || txt.includes("viracopos")) return "VCP";
+    if (txt.includes("vitoria")) return "VIX";
+    if (txt.includes("florianopolis")) return "FLN";
+    if (txt.includes("natal")) return "NAT";
+    if (txt.includes("maceio")) return "MCZ";
+    if (txt.includes("joao pessoa")) return "JPA";
+    if (txt.includes("cuiaba")) return "CGB";
+    if (txt.includes("porto velho")) return "PVH";
+    if (txt.includes("aracaju")) return "AJU";
+    if (txt.includes("sao luis")) return "SLZ";
+    if (txt.includes("teresina")) return "THE";
+    if (txt.includes("palmas")) return "PMW";
+    if (txt.includes("macapa")) return "MCP";
+    if (txt.includes("rio branco")) return "RBR";
+    if (txt.includes("boa vista")) return "BVB";
+    if (txt.includes("campo grande")) return "CGR";
 
+    // Estados Unidos
+    if (txt.includes("new york") || txt.includes("nova iorque")) return "JFK";
+    if (txt.includes("newark")) return "EWR";
+    if (txt.includes("los angeles")) return "LAX";
+    if (txt.includes("chicago")) return "ORD";
+    if (txt.includes("miami")) return "MIA";
+    if (txt.includes("orlando")) return "MCO";
+    if (txt.includes("san francisco")) return "SFO";
+    if (txt.includes("washington")) return "IAD";
+    if (txt.includes("boston")) return "BOS";
+    if (txt.includes("atlanta")) return "ATL";
+    if (txt.includes("dallas")) return "DFW";
+    if (txt.includes("houston")) return "IAH";
+    if (txt.includes("las vegas")) return "LAS";
+    if (txt.includes("seattle")) return "SEA";
+    if (txt.includes("philadelphia")) return "PHL";
+    if (txt.includes("phoenix")) return "PHX";
+
+    // Europa
+    if (txt.includes("londres") || txt.includes("london")) return "LHR";
+    if (txt.includes("paris")) return "CDG";
+    if (txt.includes("madrid")) return "MAD";
+    if (txt.includes("barcelona")) return "BCN";
+    if (txt.includes("roma") || txt.includes("rome")) return "FCO";
+    if (txt.includes("amsterdam")) return "AMS";
+    if (txt.includes("frankfurt")) return "FRA";
+    if (txt.includes("munique") || txt.includes("munich")) return "MUC";
+    if (txt.includes("berlin")) return "BER";
+    if (txt.includes("dublin")) return "DUB";
+    if (txt.includes("lisboa") || txt.includes("lisbon")) return "LIS";
+    if (txt.includes("porto") && txt.includes("portugal")) return "OPO";
+    if (txt.includes("milao") || txt.includes("milan")) return "MXP";
+    if (txt.includes("viena") || txt.includes("vienna")) return "VIE";
+    if (txt.includes("zurique") || txt.includes("zurich")) return "ZRH";
+
+    // América Latina
+    if (txt.includes("buenos aires")) return "EZE";
+    if (txt.includes("santiago")) return "SCL";
+    if (txt.includes("lima")) return "LIM";
+    if (txt.includes("bogota")) return "BOG";
+    if (txt.includes("ciudad de mexico") || txt.includes("mexico city")) return "MEX";
+    if (txt.includes("cancun")) return "CUN";
+    if (txt.includes("montevideo")) return "MVD";
+    if (txt.includes("quito")) return "UIO";
+    if (txt.includes("caracas")) return "CCS";
+    if (txt.includes("havana") || txt.includes("havanna")) return "HAV";
+    if (txt.includes("panama")) return "PTY";
+
+    // Ásia e Oceania
     if (txt.includes("tokyo") || txt.includes("toquio")) return "NRT";
     if (txt.includes("dubai")) return "DXB";
     if (txt.includes("singapore") || txt.includes("singapura")) return "SIN";
@@ -441,6 +521,7 @@
   const precoMaisBaratoEl = document.getElementById("precoMaisBarato");
   const precoMaisBaratoResumoEl = document.getElementById("precoMaisBaratoResumo");
   const dynamicResultsEl = document.getElementById("dynamicResults");
+  const seatVoltaBtn = document.querySelector('.btn-seat[data-segment="volta"]');
 
   // ---------- preenche painel ----------
   origemTxt.textContent  = origem;
@@ -471,6 +552,14 @@
     document.getElementById("destinoCity2").textContent = dCity;
   }
   atualizaCards();
+
+  function updateVoltaSeatState(){
+    if (!seatVoltaBtn) return;
+    const shouldDisable = (modo === 'rt' && !voltaISO);
+    seatVoltaBtn.classList.toggle('is-disabled', shouldDisable);
+    seatVoltaBtn.setAttribute('aria-disabled', shouldDisable ? 'true' : 'false');
+  }
+  updateVoltaSeatState();
 
   // ---------- abrir datepicker ----------
   function openPicker(inputEl){
@@ -506,6 +595,7 @@
 
   function handleStateChange(){
     atualizaCards();
+    updateVoltaSeatState();
     syncQS();
     scheduleAPIUpdate();
   }
@@ -801,8 +891,17 @@
 
   document.querySelectorAll('.btn-seat').forEach(btn=>{
     btn.addEventListener('click', (event)=>{
-      event.preventDefault();
       const segmento = btn.dataset.segment || 'ida';
+
+      // Bloqueia VOLTA sem data de volta selecionada
+      if (segmento === 'volta' && modo === 'rt' && !voltaISO){
+        event.preventDefault();
+        alert('Selecione uma data de volta antes de escolher os assentos da volta.');
+        openPicker(inpVolta);
+        return;
+      }
+
+      event.preventDefault();
       const tarifa = segmento === 'ida'
         ? (precoRecomendadoEl?.textContent || '')
         : (precoMaisBaratoEl?.textContent || '');
