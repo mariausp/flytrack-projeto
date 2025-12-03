@@ -1,16 +1,18 @@
 {% load static %}
-<link rel="icon" type="image/png" href="{% static 'core/img/favicon.png' %}">
-<link rel="shortcut icon" href="{% static 'core/img/favicon.png' %}">
-
 <!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Fly Track — Encontre e Reserve Passagens Acessíveis</title>
+
+  <link rel="icon" type="image/png" href="{% static 'core/img/favicon.png' %}">
+  <link rel="shortcut icon" href="{% static 'core/img/favicon.png' %}">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
   <style>
     :root{
       --bg:#edf6fb;
@@ -26,7 +28,12 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{ margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif; color:var(--ink); background:var(--bg); }
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+      color:var(--ink);
+      background:var(--bg);
+    }
     .wrap{max-width:1200px;margin:32px auto;padding:0 20px}
     .card{background:var(--card);border:1px solid var(--line);border-radius:28px;padding:28px;box-shadow:0 12px 30px rgba(13,35,60,.06)}
     .nav{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}
@@ -46,7 +53,7 @@
     .lead{color:var(--muted);margin:0 0 22px 0;font-size:18px}
 
     .search{background:#f7fbff;border:2px solid var(--line);border-radius:22px;padding:14px;display:flex;gap:12px;align-items:center;box-shadow:inset 0 2px 0 rgba(255,255,255,.6)}
-    .field{flex:1;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:10px; position:relative;}
+    .field{flex:1;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:10px;position:relative;}
     .field input{border:0;outline:0;width:100%;font-size:16px;color:var(--ink);background:transparent;min-width:0}
     .field input::placeholder{color:#8aa2bb}
     .icon{width:22px;height:22px;display:inline-block;flex-shrink:0;color:var(--accent)}
@@ -62,7 +69,7 @@
     @media (max-width:640px){.search{flex-direction:column;align-items:stretch}.arrow{display:none}.btn{width:100%}}
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
-    /* ===== Autocomplete & larguras ===== */
+    /* Autocomplete */
     .field-origin,.field-dest{flex:1 1 320px;min-width:220px}
     .field.suggest{position:relative}
     .suggest-list{
@@ -71,7 +78,6 @@
       background:var(--card); border:1px solid var(--line); border-radius:12px;
       box-shadow:0 14px 28px rgba(10,35,60,.12); z-index:50; display:none;
     }
-
     .suggest-list button{
       width:100%; padding:12px 14px; font-size:15.5px; line-height:1.2;
       border:0; background:transparent; border-radius:10px; text-align:left; cursor:pointer;
@@ -101,7 +107,7 @@
     .brand{ font-size: 25px; font-weight: 800; letter-spacing: .2px; }
     @media (min-width: 1200px){ .brand{ font-size: 25px; } }
 
-    /* ====== DATA ====== */
+    /* DATA */
     .field input[type="date"]::-webkit-calendar-picker-indicator{ display:none; }
     .field input[type="date"]::-webkit-inner-spin-button{ display:none; }
     .field input[type="date"]::-webkit-clear-button{ display:none; }
@@ -140,17 +146,7 @@
               </form>
             </li>
           {% else %}
-            {% if user.is_authenticated %}
-              <li>Olá, {{ user.username }}!</li>
-              <li>
-                <form action="{% url 'logout' %}" method="post" style="display:inline;">
-                  {% csrf_token %}
-                  <button type="submit" class="login" style="background:#ccc; color:#0b1e45;">Sair</button>
-                </form>
-              </li>
-            {% else %}
-              <li><a class="login" href="{% url 'login' %}">Log in</a></li>
-            {% endif %}
+            <li><a class="login" href="{% url 'login' %}">Log in</a></li>
           {% endif %}
         </ul>
       </nav>
@@ -237,22 +233,130 @@
 
   <!-- AUTOCOMPLETE + REDIRECT -->
   <script>
-    const brazilCities = [
-      "São Paulo, SP","Rio de Janeiro, RJ","Belo Horizonte, MG","Brasília, DF","Salvador, BA",
-      "Fortaleza, CE","Recife, PE","Porto Alegre, RS","Curitiba, PR","Manaus, AM",
-      "Belém, PA","Goiânia, GO","Campinas, SP","São Luís, MA","Maceió, AL",
-      "Natal, RN","Teresina, PI","João Pessoa, PB","Aracaju, SE","Cuiabá, MT",
-      "Campo Grande, MS","Florianópolis, SC","Vitória, ES","Macapá, AP","Palmas, TO",
-      "Ribeirão Preto, SP","Santos, SP","Sorocaba, SP","São José dos Campos, SP",
-      "Jundiaí, SP","Piracicaba, SP","Santo André, SP","São Bernardo do Campo, SP",
-      "Osasco, SP","Guarulhos, SP","Niterói, RJ","Duque de Caxias, RJ",
-      "Uberlândia, MG","Juiz de Fora, MG","Londrina, PR","Maringá, PR",
-      "Joinville, SC","Blumenau, SC","Caxias do Sul, RS","Pelotas, RS"
-    ];
-    const extras = ["Nova Iorque, EUA","Nova Orleans, EUA","Nova Deli, Índia","Newark (EWR), EUA"];
-    const destinos = [...brazilCities, ...extras];
+    // Lista única de localidades (use aqui as MESMAS opções de resultados.html)
+    const allLocations = [
+      // Brasil – capitais e principais aeroportos
+      "São Paulo, SP",
+      "Guarulhos, SP (GRU)",
+      "Campinas, SP (Viracopos)",
+      "Rio de Janeiro, RJ",
+      "Brasília, DF",
+      "Belo Horizonte, MG (Confins)",
+      "Salvador, BA",
+      "Fortaleza, CE",
+      "Recife, PE",
+      "Curitiba, PR",
+      "Porto Alegre, RS",
+      "Manaus, AM",
+      "Belém, PA",
+      "Goiânia, GO",
+      "Vitória, ES",
+      "Florianópolis, SC",
+      "Natal, RN",
+      "Maceió, AL",
+      "João Pessoa, PB",
+      "Cuiabá, MT",
+      "Campo Grande, MS",
+      "Porto Velho, RO",
+      "Rio Branco, AC",
+      "Boa Vista, RR",
+      "Aracaju, SE",
+      "São Luís, MA",
+      "Teresina, PI",
+      "Palmas, TO",
+      "Macapá, AP",
+      "Ribeirão Preto, SP",
+      "Santos, SP",
+      "Sorocaba, SP",
+      "São José dos Campos, SP",
+      "Jundiaí, SP",
+      "Piracicaba, SP",
+      "Santo André, SP",
+      "São Bernardo do Campo, SP",
+      "Osasco, SP",
+      "Niterói, RJ",
+      "Duque de Caxias, RJ",
+      "Uberlândia, MG",
+      "Juiz de Fora, MG",
+      "Londrina, PR",
+      "Maringá, PR",
+      "Joinville, SC",
+      "Blumenau, SC",
+      "Caxias do Sul, RS",
+      "Pelotas, RS",
 
-    const normalize = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+      // Estados Unidos
+      "Nova Iorque, NY (JFK)",
+      "New York, NY (JFK)",
+      "Newark, NJ (EWR)",
+      "Los Angeles, CA (LAX)",
+      "Chicago, IL (ORD)",
+      "Miami, FL (MIA)",
+      "Orlando, FL (MCO)",
+      "San Francisco, CA (SFO)",
+      "Washington, DC (IAD)",
+      "Boston, MA (BOS)",
+      "Atlanta, GA (ATL)",
+      "Dallas, TX (DFW)",
+      "Houston, TX (IAH)",
+      "Las Vegas, NV (LAS)",
+      "Seattle, WA (SEA)",
+      "Philadelphia, PA (PHL)",
+      "Phoenix, AZ (PHX)",
+
+      // Europa
+      "Londres, Reino Unido (LHR)",
+      "London, UK (LHR)",
+      "Paris, França (CDG)",
+      "Madrid, Espanha (MAD)",
+      "Barcelona, Espanha (BCN)",
+      "Roma, Itália (FCO)",
+      "Rome, Italy (FCO)",
+      "Amsterdã, Holanda (AMS)",
+      "Frankfurt, Alemanha (FRA)",
+      "Munique, Alemanha (MUC)",
+      "Munich, Germany (MUC)",
+      "Berlim, Alemanha (BER)",
+      "Dublin, Irlanda (DUB)",
+      "Lisboa, Portugal (LIS)",
+      "Lisbon, Portugal (LIS)",
+      "Porto, Portugal (OPO)",
+      "Milão, Itália (MXP)",
+      "Milan, Italy (MXP)",
+      "Viena, Áustria (VIE)",
+      "Vienna, Austria (VIE)",
+      "Zurique, Suíça (ZRH)",
+      "Zurich, Switzerland (ZRH)",
+
+      // América Latina
+      "Buenos Aires, Argentina (EZE)",
+      "Santiago, Chile (SCL)",
+      "Lima, Peru (LIM)",
+      "Bogotá, Colômbia (BOG)",
+      "Cidade do México, México (MEX)",
+      "Ciudad de Mexico, México (MEX)",
+      "Mexico City, Mexico (MEX)",
+      "Cancún, México (CUN)",
+      "Montevidéu, Uruguai (MVD)",
+      "Quito, Equador (UIO)",
+      "Caracas, Venezuela (CCS)",
+      "Havana, Cuba (HAV)",
+      "Panamá, Panamá (PTY)",
+
+      // Ásia e Oceania
+      "Tóquio, Japão (NRT)",
+      "Tokyo, Japan (NRT)",
+      "Dubai, Emirados Árabes (DXB)",
+      "Singapura (SIN)",
+      "Singapore (SIN)",
+      "Hong Kong (HKG)",
+      "Sydney, Austrália (SYD)",
+      "Melbourne, Austrália (MEL)",
+      "Auckland, Nova Zelândia (AKL)"
+    ];
+
+    const normalize = s =>
+      s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
     function createAutocomplete(inputId, listId, dataset){
       const input = document.getElementById(inputId);
@@ -289,7 +393,10 @@
         if(list.style.display!=='block'||options.length===0) return;
         if(e.key==='ArrowDown'){ e.preventDefault(); idx=(idx+1)%options.length; options[idx].focus(); }
         if(e.key==='ArrowUp'){ e.preventDefault(); idx=(idx-1+options.length)%options.length; options[idx].focus(); }
-        if(e.key==='Enter' && document.activeElement.parentElement===list){ e.preventDefault(); document.activeElement.click(); }
+        if(e.key==='Enter' && document.activeElement.parentElement===list){
+          e.preventDefault();
+          document.activeElement.click();
+        }
         if(e.key==='Escape'){ list.style.display='none'; }
       });
 
@@ -298,8 +405,9 @@
       });
     }
 
-    createAutocomplete('origem','suggestOrigem',brazilCities);
-    createAutocomplete('destino','suggestDestino',destinos);
+    // Mesma lista para origem e destino
+    createAutocomplete('origem','suggestOrigem',allLocations);
+    createAutocomplete('destino','suggestDestino',allLocations);
 
     // === DATA: min = hoje, botão abre calendário e validação ===
     const dateInput = document.getElementById('data');
@@ -361,11 +469,7 @@
         e.preventDefault();
         showDateError('Escolha uma data a partir de hoje.');
         dateInput.focus();
-        return;
       }
-      const o=encodeURIComponent(document.getElementById('origem').value||'São Paulo, SP - BR');
-      const d=encodeURIComponent(document.getElementById('destino').value||'New York, NY - USA');
-      const dt=encodeURIComponent(dateInput.value||'');
     });
   </script>
 </body>
